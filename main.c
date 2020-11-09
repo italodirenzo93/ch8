@@ -1,16 +1,19 @@
 #include <stdio.h>
-
 #include "ch8_cpu.h"
-
-static const uint8_t program[] = {0x000, 0x000, 0x000, 0x000};
 
 int main(int argc, char *argv[])
 {
-    printf("hello world [%d %s]\n", argc, argv[0]);
+    printf("CH8 Libertad [%d %s]\n", argc, argv[0]);
 
-    ch8_cpu *cpu = ch8_init();
+    uint8_t program[] = {0x00, 0xEE};
 
-    ch8_load_rom(cpu, program, 4);
+    ch8_cpu *cpu = NULL;
+    ch8_init(&cpu);
+
+    ch8_load_rom(cpu, program, 2);
+    uint16_t opcode = ch8_next_opcode(cpu);
+    printf("Opcode is %d\n", opcode);
+    ch8_exec_opcode(cpu, opcode);
 
     ch8_quit(cpu);
     cpu = NULL;
