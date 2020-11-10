@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "ch8_gpu.h"
+
 #define MEM_SIZE 4096
 #define STACK_SIZE 48
 #define NUM_REGISTERS 16
@@ -22,11 +24,12 @@ struct __ch8_cpu
     uint8_t V[NUM_REGISTERS]; /* data registers */
     uint16_t PC;
     uint8_t stack[STACK_SIZE];
+    ch8_gpu *gpu;
 };
 
 typedef struct __ch8_cpu ch8_cpu;
 
-void ch8_init(ch8_cpu **pcpu);
+void ch8_init(ch8_gpu *gpu, ch8_cpu **pcpu);
 void ch8_quit(ch8_cpu *cpu);
 void ch8_load_rom(ch8_cpu *cpu, uint8_t *program, size_t size);
 bool ch8_load_rom_file(ch8_cpu *cpu, const char *file);
