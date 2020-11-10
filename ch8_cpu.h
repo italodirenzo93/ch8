@@ -30,7 +30,7 @@ struct __ch8_cpu
 typedef struct __ch8_cpu ch8_cpu;
 
 void ch8_init(ch8_gpu *gpu, ch8_cpu **pcpu);
-void ch8_quit(ch8_cpu *cpu);
+void ch8_quit(ch8_cpu **cpu);
 void ch8_load_rom(ch8_cpu *cpu, uint8_t *program, size_t size);
 bool ch8_load_rom_file(ch8_cpu *cpu, const char *file);
 uint16_t ch8_next_opcode(ch8_cpu *cpu);
