@@ -1,4 +1,4 @@
-CC=cc
+CC=gcc
 CFLAGS=-I
 
 build:	main.c ch8_cpu.c
