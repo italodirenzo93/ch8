@@ -1,4 +1,5 @@
 #include "ch8_cpu.h"
+#include "util.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -6,13 +7,10 @@
 
 void ch8_init(ch8_gpu *gpu, ch8_cpu **pcpu)
 {
+    assert(gpu != NULL);
     assert(pcpu != NULL);
 
-    ch8_cpu *cpu = (ch8_cpu *)malloc(sizeof(ch8_cpu));
-
-    memset(cpu->memory, 0, MEM_SIZE);
-    memset(cpu->V, 0, NUM_REGISTERS);
-    memset(cpu->stack, 0, STACK_SIZE);
+    ch8_cpu *cpu = (ch8_cpu *)ch8_malloc(sizeof(ch8_cpu));
 
     cpu->I = 0;
     cpu->PC = PROGRAM_START_OFFSET;
@@ -22,10 +20,10 @@ void ch8_init(ch8_gpu *gpu, ch8_cpu **pcpu)
     (*pcpu) = cpu;
 }
 
-void ch8_quit(ch8_cpu *cpu)
+void ch8_quit(ch8_cpu **cpu)
 {
     assert(cpu != NULL);
-    free(cpu);
+    ch8_free((void **)cpu);
 }
 
 void ch8_load_rom(ch8_cpu *cpu, uint8_t *program, size_t size)
@@ -53,7 +51,7 @@ bool ch8_load_rom_file(ch8_cpu *cpu, const char *file)
     rewind(f);
     if (len > MAX_PROGRAM_SIZE)
     {
-        printf("File size too large (%d bytes)\n", len);
+        printf("File size too large (%zu bytes)\n", len);
         return false;
     }
 
