@@ -1,6 +1,7 @@
 #ifndef __CH8_GPU__
 #define __CH8_GPU__
 
+#include <stdint.h>
 #include <stdbool.h>
 
 #define CH8_FRAMEBUFFER_SIZE 2048 /* 64x32 px */
