@@ -3,5 +3,6 @@
 
 void display_init();
 void display_quit();
+void display_clear();
 
 #endif

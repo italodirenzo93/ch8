@@ -1,27 +1,20 @@
 #include <stdio.h>
-#include "ch8_cpu.h"
 
+#include "ch8_cpu.h"
+#include "display.h"
 #include "SDL.h"
 
 uint8_t program[] = {0x00, 0xEE};
-ch8_gpu *gpu = NULL;
 ch8_cpu *cpu = NULL;
 
 void cleanup()
 {
-    if (gpu != NULL)
-    {
-        ch8_quit_gpu(&gpu);
-        printf("Free'd GPU\n");
-    }
-
     if (cpu != NULL)
     {
         ch8_quit(&cpu);
-        printf("Free'd CPU\n");
+        printf("Freed CHIP-8 VM.\n");
     }
-
-    SDL_Quit();
+    display_quit();
 }
 
 int main(int argc, char *argv[])
@@ -30,16 +23,15 @@ int main(int argc, char *argv[])
 
     printf("CH8 Libertad [%d %s]\n", argc, argv[0]);
 
-    ch8_init_gpu(&gpu);
-    ch8_init(gpu, &cpu);
+    ch8_init(&cpu);
+    display_init();
 
     ch8_load_rom(cpu, program, 2);
 
-    uint16_t opcode;
     SDL_Event ev;
-    while ((opcode = ch8_next_opcode(cpu)))
+    while (1)
     {
-        ch8_exec_opcode(cpu, opcode);
+        ch8_exec_opcode(cpu);
         while (SDL_PollEvent(&ev))
         {
             switch (ev.type)
@@ -50,6 +42,4 @@ int main(int argc, char *argv[])
             }
         }
     }
-
-    return EXIT_SUCCESS;
 }

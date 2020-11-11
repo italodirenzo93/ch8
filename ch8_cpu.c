@@ -1,36 +1,46 @@
-#include "ch8_cpu.h"
-#include "util.h"
-
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
 
-void ch8_init(ch8_gpu *gpu, ch8_cpu **pcpu)
+#include "ch8_cpu.h"
+#include "display.h"
+#include "util.h"
+
+void ch8_init(ch8_cpu **pcpu)
 {
-    assert(gpu != NULL);
     assert(pcpu != NULL);
 
     ch8_cpu *cpu = (ch8_cpu *)ch8_malloc(sizeof(ch8_cpu));
-
-    cpu->I = 0;
-    cpu->PC = PROGRAM_START_OFFSET;
-
-    cpu->gpu = gpu;
-
     (*pcpu) = cpu;
+
+    ch8_reset(cpu);
 }
 
-void ch8_quit(ch8_cpu **cpu)
+void ch8_quit(ch8_cpu **pcpu)
+{
+    assert(pcpu != NULL);
+    ch8_free((void **)pcpu);
+}
+
+void ch8_reset(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
-    ch8_free((void **)cpu);
+
+    memset(cpu->memory, 0, CH8_MEM_SIZE);
+    memset(cpu->V, 0, CH8_NUM_REGISTERS);
+    memset(cpu->stack, 0, CH8_STACK_SIZE);
+    memset(cpu->display, 0, CH8_DISPLAY_SIZE);
+
+    cpu->I = 0;
+    cpu->PC = CH8_PROGRAM_START_OFFSET;
+    cpu->running = true;
 }
 
 void ch8_load_rom(ch8_cpu *cpu, uint8_t *program, size_t size)
 {
     assert(cpu != NULL);
-    assert(size <= MAX_PROGRAM_SIZE);
-    memcpy(cpu->memory + PROGRAM_START_OFFSET, program, size);
+    assert(size <= CH8_MAX_PROGRAM_SIZE);
+    memcpy(cpu->memory + CH8_PROGRAM_START_OFFSET, program, size);
 }
 
 bool ch8_load_rom_file(ch8_cpu *cpu, const char *file)
@@ -49,13 +59,13 @@ bool ch8_load_rom_file(ch8_cpu *cpu, const char *file)
     fseek(f, 0, SEEK_END);
     len = ftell(f);
     rewind(f);
-    if (len > MAX_PROGRAM_SIZE)
+    if (len > CH8_MAX_PROGRAM_SIZE)
     {
         printf("File size too large (%zu bytes)\n", len);
         return false;
     }
 
-    fread(cpu->memory + PROGRAM_START_OFFSET, sizeof(uint8_t), len, f);
+    fread(cpu->memory + CH8_PROGRAM_START_OFFSET, sizeof(uint8_t), len, f);
 
     fclose(f);
 
@@ -70,14 +80,26 @@ uint16_t ch8_next_opcode(ch8_cpu *cpu)
     uint8_t lsb = cpu->memory[cpu->PC + 1];
     uint16_t opcode = msb << 8 | lsb;
 
-    cpu->PC += 2;
-
     return opcode;
 }
 
-void ch8_exec_opcode(ch8_cpu *cpu, uint16_t opcode)
+bool ch8_exec_opcode(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
+
+    if (!cpu->running)
+        return false;
+
+    uint16_t opcode = ch8_next_opcode(cpu);
+    if (opcode == 0)
+    {
+        cpu->running = false;
+        return false;
+    }
+    else
+    {
+        cpu->PC += 2;
+    }
 
     switch (opcode & 0xF000)
     {
@@ -85,7 +107,7 @@ void ch8_exec_opcode(ch8_cpu *cpu, uint16_t opcode)
         switch (opcode & 0x00FF)
         {
         case CH8_OPCODE_DISPLAY_CLEAR:
-            ch8_display_clear(cpu->gpu);
+            display_clear();
             break;
 
         case CH8_OPCODE_RETURN:
@@ -93,5 +115,10 @@ void ch8_exec_opcode(ch8_cpu *cpu, uint16_t opcode)
             break;
         }
         break;
+    default:
+        printf("Unrecognized opcode: %X\n", opcode);
+        return false;
     }
+
+    return true;
 }
