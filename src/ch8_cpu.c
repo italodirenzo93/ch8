@@ -6,6 +6,13 @@
 #include "display.h"
 #include "util.h"
 
+void display_clear(ch8_cpu *cpu)
+{
+    begin_frame(cpu->display);
+    memset(cpu->display, 0, CH8_DISPLAY_SIZE);
+    end_frame();
+}
+
 void ch8_init(ch8_cpu **pcpu)
 {
     assert(pcpu != NULL);
@@ -107,7 +114,7 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
         switch (opcode & 0x00FF)
         {
         case CH8_OPCODE_DISPLAY_CLEAR:
-            display_clear();
+            display_clear(cpu);
             break;
 
         case CH8_OPCODE_RETURN:
