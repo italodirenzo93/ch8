@@ -15,8 +15,6 @@ void display_init()
     if (!initialized)
     {
         SDL_InitSubSystem(SDL_INIT_VIDEO);
-        SDL_CreateWindowAndRenderer(800, 600, 0, &window, &renderer);
-        SDL_SetWindowTitle(window, "CHIP-8");
 
         window = SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, 0);
         renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);

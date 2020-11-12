@@ -58,7 +58,7 @@ bool ch8_load_rom_file(ch8_cpu *cpu, const char *file)
     FILE *f = fopen(file, "rb");
     if (f == NULL)
     {
-        printf("Could not open file %s...\n", file);
+        fprintf(stderr, "Could not open file %s...\n", file);
         return false;
     }
 
@@ -68,7 +68,7 @@ bool ch8_load_rom_file(ch8_cpu *cpu, const char *file)
     rewind(f);
     if (len > CH8_MAX_PROGRAM_SIZE)
     {
-        printf("File size too large (%zu bytes)\n", len);
+        fprintf(stderr, "File size too large (%zu bytes)\n", len);
         return false;
     }
 
@@ -101,6 +101,7 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
     if (opcode == 0)
     {
         cpu->running = false;
+        printf("ROM exited\n");
         return false;
     }
     else
@@ -114,11 +115,12 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
         switch (opcode & 0x00FF)
         {
         case CH8_OPCODE_DISPLAY_CLEAR:
+            printf("[%X] Display clear\n", opcode);
             display_clear(cpu);
             break;
 
         case CH8_OPCODE_RETURN:
-            printf("Return from subroutine\n");
+            printf("[%X] Return from subroutine\n", opcode);
             break;
         }
         break;

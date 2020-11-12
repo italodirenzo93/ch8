@@ -4,7 +4,6 @@
 #include "display.h"
 #include "SDL.h"
 
-uint8_t program[] = {0x00, 0xEE};
 ch8_cpu *cpu = NULL;
 
 void cleanup()
@@ -26,12 +25,20 @@ int main(int argc, char *argv[])
     ch8_init(&cpu);
     display_init();
 
-    ch8_load_rom(cpu, program, 2);
+    const char rom[] = "test_opcode.ch8";
+    if (!ch8_load_rom_file(cpu, rom))
+    {
+        exit(EXIT_FAILURE);
+    }
 
     SDL_Event ev;
     while (1)
     {
-        ch8_exec_opcode(cpu);
+        if (cpu->running)
+        {
+            ch8_exec_opcode(cpu);
+        }
+
         while (SDL_PollEvent(&ev))
         {
             switch (ev.type)
