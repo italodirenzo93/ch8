@@ -9,12 +9,16 @@ SDL_Texture *display = NULL;
 SDL_Event event;
 bool initialized = false;
 
+#define INIT_CHECK()  \
+    if (!initialized) \
+    return
+
 void display_init()
 {
     if (initialized)
         return;
 
-    SDL_InitSubSystem(SDL_INIT_VIDEO);
+    SDL_Init(SDL_INIT_VIDEO);
 
     window = SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -25,8 +29,7 @@ void display_init()
 
 void display_quit()
 {
-    if (!initialized)
-        return;
+    INIT_CHECK();
 
     SDL_DestroyTexture(display);
     display = NULL;
@@ -37,12 +40,12 @@ void display_quit()
     SDL_DestroyWindow(window);
     window = NULL;
 
-    SDL_QuitSubSystem(SDL_INIT_VIDEO);
+    SDL_Quit();
 
     initialized = false;
 }
 
-void display_poll_events()
+void display_event_loop()
 {
     while (SDL_PollEvent(&event))
     {
@@ -57,15 +60,13 @@ void display_poll_events()
 
 void display_clear()
 {
-    if (!initialized)
-        return;
+    INIT_CHECK();
     SDL_RenderClear(renderer);
 }
 
 void draw_sprite(ch8_cpu *cpu, uint8_t x, uint8_t y, uint8_t h)
 {
-    if (!initialized)
-        return;
+    INIT_CHECK();
 
     SDL_Rect src;
     src.x = x;

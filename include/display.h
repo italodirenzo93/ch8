@@ -13,6 +13,7 @@ struct ch8_cpu;
 
 void display_init();
 void display_quit();
+void display_event_loop();
 void display_poll_events();
 void display_clear();
 void draw_sprite(struct ch8_cpu *cpu, uint8_t x, uint8_t y, uint8_t h);

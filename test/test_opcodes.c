@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "vendor/unity.h"
 #include "opcodes.h"
 #include "display.h"
@@ -19,7 +21,7 @@ ch8_cpu chip8;
 
 void setUp()
 {
-    ch8_reset(&chip8);
+    memset(&chip8, 0, sizeof(ch8_cpu));
 }
 
 void tearDown()
