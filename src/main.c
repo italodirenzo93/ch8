@@ -20,13 +20,10 @@ int main(int argc, char *argv[])
 {
     atexit(cleanup);
 
-    printf("CH8 Libertad [%d %s]\n", argc, argv[0]);
-
     ch8_init(&cpu);
     display_init();
 
-    const char rom[] = "test_opcode.ch8";
-    if (!ch8_load_rom_file(cpu, rom))
+    if (!ch8_load_rom_file(cpu, "test_opcode.ch8"))
     {
         exit(EXIT_FAILURE);
     }
@@ -34,19 +31,11 @@ int main(int argc, char *argv[])
     SDL_Event ev;
     while (1)
     {
+        display_poll_events();
+
         if (cpu->running)
         {
             ch8_exec_opcode(cpu);
-        }
-
-        while (SDL_PollEvent(&ev))
-        {
-            switch (ev.type)
-            {
-            case SDL_QUIT:
-                exit(EXIT_SUCCESS);
-                break;
-            }
         }
     }
 }
