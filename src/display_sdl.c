@@ -13,6 +13,23 @@ bool initialized = false;
     if (!initialized) \
     return
 
+static input_key scancode_to_key_register(SDL_Scancode scancode)
+{
+    switch (scancode)
+    {
+    default:
+        return INPUT_KEY_UNKNOWN;
+    case SDL_SCANCODE_UP:
+        return INPUT_KEY_UP;
+    case SDL_SCANCODE_DOWN:
+        return INPUT_KEY_DOWN;
+    case SDL_SCANCODE_LEFT:
+        return INPUT_KEY_LEFT;
+    case SDL_SCANCODE_RIGHT:
+        return INPUT_KEY_RIGHT;
+    }
+}
+
 void display_init()
 {
     if (initialized)
@@ -45,7 +62,7 @@ void display_quit()
     initialized = false;
 }
 
-void display_event_loop()
+void display_event_loop(ch8_cpu *cpu)
 {
     while (SDL_PollEvent(&event))
     {
@@ -54,6 +71,26 @@ void display_event_loop()
         case SDL_QUIT:
             exit(EXIT_SUCCESS);
             break;
+        case SDL_KEYDOWN:
+        {
+            //printf("Key down: %s\n", SDL_GetScancodeName(event.key.keysym.scancode));
+            input_key key = scancode_to_key_register(event.key.keysym.scancode);
+            if (key != INPUT_KEY_UNKNOWN)
+            {
+                cpu->keypad[key] = CH8_KEYDOWN;
+            }
+            break;
+        }
+        case SDL_KEYUP:
+        {
+            //printf("Key up: %s\n", SDL_GetScancodeName(event.key.keysym.scancode));
+            input_key key = scancode_to_key_register(event.key.keysym.scancode);
+            if (key != INPUT_KEY_UNKNOWN)
+            {
+                cpu->keypad[key] = CH8_KEYUP;
+            }
+            break;
+        }
         }
     }
 }

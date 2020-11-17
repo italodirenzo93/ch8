@@ -164,8 +164,9 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_keyop_eq(ch8_cpu *cpu, uint16_t opcode)
 {
     uint8_t vx = (opcode & 0x0F00) >> 8;
-    uint8_t key = cpu->memory[vx];
-    if (key == 1)
+    uint8_t key = cpu->keypad[vx];
+    printf("KEY check if keypad[%d] is down\n", key);
+    if (key == CH8_KEYDOWN)
     {
         cpu->PC += 2;
     }
@@ -174,8 +175,9 @@ void ch8_op_keyop_eq(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_keyop_neq(ch8_cpu *cpu, uint16_t opcode)
 {
     uint8_t vx = (opcode & 0x0F00) >> 8;
-    uint8_t key = cpu->memory[vx];
-    if (key != 1)
+    uint8_t key = cpu->keypad[vx];
+    printf("KEY check if keypad[%d] is up\n", key);
+    if (key == CH8_KEYUP)
     {
         cpu->PC += 2;
     }

@@ -26,6 +26,7 @@ struct ch8_cpu
     uint8_t stack[CH8_STACK_SIZE];
     time_t delayTimer;
     time_t soundTimer;
+    uint8_t keypad[16];
     bool running;
 };
 

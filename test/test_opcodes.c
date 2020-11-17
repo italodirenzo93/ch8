@@ -172,6 +172,42 @@ static void jump_to_addr_plus_v0()
     TEST_ASSERT_EQUAL(413, chip8.PC);
 }
 
+// 0xEX9E
+static void key_down_skip_next_instruction()
+{
+    chip8.keypad[8] = CH8_KEYDOWN;
+    chip8.PC = 5;
+    ch8_op_keyop_eq(&chip8, 0xE800);
+    TEST_ASSERT_EQUAL(7, chip8.PC);
+}
+
+static void key_down_does_not_skip_next_instruction()
+{
+    chip8.keypad[8] = CH8_KEYDOWN;
+    chip8.keypad[4] = CH8_KEYUP;
+    chip8.PC = 5;
+    ch8_op_keyop_eq(&chip8, 0xE400);
+    TEST_ASSERT_EQUAL(5, chip8.PC);
+}
+
+// 0xEXA1
+static void key_up_skip_next_instruction()
+{
+    chip8.keypad[8] = CH8_KEYDOWN;
+    chip8.PC = 5;
+    ch8_op_keyop_neq(&chip8, 0xE800);
+    TEST_ASSERT_EQUAL(5, chip8.PC);
+}
+
+static void key_up_does_not_skip_next_instruction()
+{
+    chip8.keypad[9] = CH8_KEYDOWN;
+    chip8.keypad[4] = CH8_KEYUP;
+    chip8.PC = 5;
+    ch8_op_keyop_neq(&chip8, 0xE400);
+    TEST_ASSERT_EQUAL(7, chip8.PC);
+}
+
 int main()
 {
     UnityBegin("test/test_opcodes.c");
@@ -210,9 +246,14 @@ int main()
     RUN_TEST(jump_to_addr_plus_v0);
 
     // 0xC000
+
     // 0xD000
 
     // 0xE000
+    RUN_TEST(key_down_skip_next_instruction);
+    RUN_TEST(key_down_does_not_skip_next_instruction);
+    RUN_TEST(key_up_skip_next_instruction);
+    RUN_TEST(key_up_does_not_skip_next_instruction);
 
     return UnityEnd();
 }
