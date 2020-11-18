@@ -180,6 +180,7 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
             ch8_op_xor(cpu, opcode);
             break;
         case 0x0004:
+            ch8_op_add_vx_to_vy(cpu, opcode);
             break;
         case 0x0005:
             break;

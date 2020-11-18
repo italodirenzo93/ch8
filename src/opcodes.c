@@ -131,6 +131,23 @@ void ch8_op_xor(ch8_cpu *cpu, uint16_t opcode)
     cpu->V[vx] = cpu->V[vx] ^ cpu->V[vy];
 }
 
+void ch8_op_add_vx_to_vy(ch8_cpu *cpu, uint16_t opcode)
+{
+    uint8_t vx = (opcode & 0x0F00) >> 8;
+    uint8_t vy = (opcode & 0x00F0) >> 4;
+    uint16_t result = cpu->V[vx] + cpu->V[vy];
+    if (result > 0xFF)
+    {
+        // set the "carry" flag
+        cpu->V[0xF] = 1;
+        cpu->V[vx] = 0xFF;
+    }
+    else
+    {
+        cpu->V[vx] = result;
+    }
+}
+
 void ch8_op_set_addr(ch8_cpu *cpu, uint16_t opcode)
 {
     uint16_t addr = opcode & 0x0FFF;

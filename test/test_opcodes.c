@@ -159,6 +159,31 @@ static void bitwise_xor()
     TEST_ASSERT_EQUAL(6, chip8.V[2]);
 }
 
+// 0x8XY4
+static void add_vx_to_vy_sets_carry_to_1_if_overflow()
+{
+    chip8.V[0] = 150;
+    chip8.V[1] = 150;
+    chip8.V[0xF] = 0;
+
+    ch8_op_add_vx_to_vy(&chip8, 0x8014);
+
+    TEST_ASSERT_EQUAL(255, chip8.V[0]);
+    TEST_ASSERT_EQUAL(1, chip8.V[0xF]);
+}
+
+static void add_vx_to_vy_sets_carry_to_0_if_no_overflow()
+{
+    chip8.V[0] = 75;
+    chip8.V[1] = 25;
+    chip8.V[0xF] = 0;
+
+    ch8_op_add_vx_to_vy(&chip8, 0x8014);
+
+    TEST_ASSERT_EQUAL(100, chip8.V[0]);
+    TEST_ASSERT_EQUAL(0, chip8.V[0xF]);
+}
+
 static void set_i_to_address()
 {
     ch8_op_set_addr(&chip8, 0xA3FF);
@@ -238,6 +263,8 @@ int main()
     RUN_TEST(bitwise_or);
     RUN_TEST(bitwise_and);
     RUN_TEST(bitwise_xor);
+    RUN_TEST(add_vx_to_vy_sets_carry_to_1_if_overflow);
+    RUN_TEST(add_vx_to_vy_sets_carry_to_0_if_no_overflow);
 
     // 0xA000
     RUN_TEST(set_i_to_address);

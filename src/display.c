@@ -1,6 +1,7 @@
+#include <SDL.h>
+
 #include "display.h"
 #include "ch8_cpu.h"
-#include "SDL.h"
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;

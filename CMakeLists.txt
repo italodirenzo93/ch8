@@ -8,7 +8,7 @@ find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS} include)
 
 # add the executable
-add_executable(ch8 src/main.c src/ch8_cpu.c src/opcodes.c src/display_sdl.c)
+add_executable(ch8 src/main.c src/ch8_cpu.c src/opcodes.c src/display.c)
 target_link_libraries(ch8 ${SDL2_LIBRARIES})
 
 # add test executable
