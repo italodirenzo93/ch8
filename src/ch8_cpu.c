@@ -107,11 +107,6 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
         printf("ROM exited\n");
         return false;
     }
-    else
-    {
-        // Advance the program counter 2 bytes at a time
-        cpu->PC += 2;
-    }
 
     switch (opcode & 0xF000)
     {
@@ -229,6 +224,9 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
         printf("Unrecognized opcode: %X\n", opcode);
         return false;
     }
+
+    // Advance the program counter 2 bytes at a time
+    cpu->PC += 2;
 
     return true;
 }

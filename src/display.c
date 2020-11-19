@@ -118,10 +118,15 @@ void draw_sprite(ch8_cpu *cpu, uint8_t x, uint8_t y, uint8_t h)
     SDL_UnlockTexture(display);
 
     SDL_Rect dest;
-    dest.x = 0;
-    dest.y = 0;
+    dest.x = src.x = 0;
+    dest.y = src.y = 0;
+
+    src.w = DISPLAY_WIDTH;
+    src.h = DISPLAY_HEIGHT;
+
     dest.w = WINDOW_WIDTH;
     dest.h = WINDOW_HEIGHT;
+
     SDL_RenderCopy(renderer, display, &src, &dest);
 
     SDL_RenderPresent(renderer);
