@@ -4,7 +4,13 @@ cmake_minimum_required(VERSION 3.10)
 project(ch8)
 
 # SDL2
+if (WIN32)
+set(SDL2_INCLUDE_DIRS "${SDL2_DIR}/include")
+set(SDL2_LIBRARIES "${SDL2_DIR}/lib/x64/SDL2.lib;${SDL2_DIR}/lib/x64/SDL2main.lib")
+else()
 find_package(SDL2 REQUIRED)
+endif()
+
 include_directories(${SDL2_INCLUDE_DIRS} include)
 
 # add the executable

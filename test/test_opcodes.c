@@ -28,7 +28,7 @@ void tearDown()
 {
 }
 
-static void jumpto_sets_pc_to_address()
+static void jumpto_sets_pc_to_address(void)
 {
     uint16_t opcode = 0x1323;
     uint16_t addr = opcode & 0x0FFF;
@@ -36,7 +36,7 @@ static void jumpto_sets_pc_to_address()
     TEST_ASSERT_EQUAL(addr, chip8.PC);
 }
 
-static void cond_eq_skips_next_instruction_if_equal()
+static void cond_eq_skips_next_instruction_if_equal(void)
 {
     uint16_t opcode = 0x2305;
     uint8_t vx = (opcode & 0x0F00) >> 8;
@@ -48,7 +48,7 @@ static void cond_eq_skips_next_instruction_if_equal()
     TEST_ASSERT_EQUAL(146, chip8.PC);
 }
 
-static void cond_eq_does_not_skip_next_instruction_if_unequal()
+static void cond_eq_does_not_skip_next_instruction_if_unequal(void)
 {
     uint16_t opcode = 0x23EE;
     uint8_t vx = (opcode & 0x0F00) >> 8;
@@ -60,7 +60,7 @@ static void cond_eq_does_not_skip_next_instruction_if_unequal()
     TEST_ASSERT_EQUAL(144, chip8.PC);
 }
 
-static void cond_neq_skips_next_instruction_if_nequal()
+static void cond_neq_skips_next_instruction_if_nequal(void)
 {
     uint16_t opcode = 0x23FF;
     uint8_t vx = (opcode & 0x0F00) >> 8;
@@ -72,7 +72,7 @@ static void cond_neq_skips_next_instruction_if_nequal()
     TEST_ASSERT_EQUAL(146, chip8.PC);
 }
 
-static void cond_neq_does_not_skip_next_instruction_if_equal()
+static void cond_neq_does_not_skip_next_instruction_if_equal(void)
 {
     uint16_t opcode = 0x23FF;
     uint8_t vx = (opcode & 0x0F00) >> 8;
@@ -84,7 +84,7 @@ static void cond_neq_does_not_skip_next_instruction_if_equal()
     TEST_ASSERT_EQUAL(144, chip8.PC);
 }
 
-static void cond_vx_eq_vy_skips_next_instruction_if_equal()
+static void cond_vx_eq_vy_skips_next_instruction_if_equal(void)
 {
     uint16_t opcode = 0x23FF;
     uint8_t vx = (opcode & 0x0F00) >> 8;
@@ -98,7 +98,7 @@ static void cond_vx_eq_vy_skips_next_instruction_if_equal()
     TEST_ASSERT_EQUAL(146, chip8.PC);
 }
 
-static void cond_vx_eq_vy_does_not_skip_next_instruction_if_unequal()
+static void cond_vx_eq_vy_does_not_skip_next_instruction_if_unequal(void)
 {
     uint16_t opcode = 0x23FF;
     uint8_t vx = (opcode & 0x0F00) >> 8;
@@ -112,14 +112,14 @@ static void cond_vx_eq_vy_does_not_skip_next_instruction_if_unequal()
     TEST_ASSERT_EQUAL(144, chip8.PC);
 }
 
-static void const_set_sets_vx_to_value()
+static void const_set_sets_vx_to_value(void)
 {
     uint16_t opcode = 0x670C;
     ch8_op_const_set(&chip8, opcode);
     TEST_ASSERT_EQUAL(12, chip8.V[7]);
 }
 
-static void const_add_adds_value_to_vx()
+static void const_add_adds_value_to_vx(void)
 {
     uint16_t opcode = 0x780C;
     chip8.V[8] = 4;
@@ -127,7 +127,7 @@ static void const_add_adds_value_to_vx()
     TEST_ASSERT_EQUAL(16, chip8.V[8]);
 }
 
-static void assign_vx_to_vy()
+static void assign_vx_to_vy(void)
 {
     chip8.V[3] = 45;
     chip8.V[6] = 0;
@@ -135,7 +135,7 @@ static void assign_vx_to_vy()
     TEST_ASSERT_EQUAL(45, chip8.V[6]);
 }
 
-static void bitwise_or()
+static void bitwise_or(void)
 {
     chip8.V[8] = 1;
     chip8.V[1] = 2;
@@ -143,7 +143,7 @@ static void bitwise_or()
     TEST_ASSERT_EQUAL(3, chip8.V[8]);
 }
 
-static void bitwise_and()
+static void bitwise_and(void)
 {
     chip8.V[8] = 0x11;
     chip8.V[1] = 0xF3;
@@ -151,7 +151,7 @@ static void bitwise_and()
     TEST_ASSERT_EQUAL(17, chip8.V[8]);
 }
 
-static void bitwise_xor()
+static void bitwise_xor(void)
 {
     chip8.V[2] = 0x34;
     chip8.V[3] = 0x32;
@@ -160,7 +160,7 @@ static void bitwise_xor()
 }
 
 // 0x8XY4
-static void add_vx_to_vy_sets_carry_to_1_if_overflow()
+static void add_vx_to_vy_sets_carry_to_1_if_overflow(void)
 {
     chip8.V[0] = 150;
     chip8.V[1] = 150;
@@ -172,7 +172,7 @@ static void add_vx_to_vy_sets_carry_to_1_if_overflow()
     TEST_ASSERT_EQUAL(1, chip8.V[0xF]);
 }
 
-static void add_vx_to_vy_sets_carry_to_0_if_no_overflow()
+static void add_vx_to_vy_sets_carry_to_0_if_no_overflow(void)
 {
     chip8.V[0] = 75;
     chip8.V[1] = 25;
@@ -185,7 +185,7 @@ static void add_vx_to_vy_sets_carry_to_0_if_no_overflow()
 }
 
 // 0x8XY5
-static void sub_vy_from_vx_sets_borrow_to_0_if_underflow()
+static void sub_vy_from_vx_sets_borrow_to_0_if_underflow(void)
 {
     chip8.V[0] = 6;
     chip8.V[1] = 7;
@@ -197,7 +197,7 @@ static void sub_vy_from_vx_sets_borrow_to_0_if_underflow()
     TEST_ASSERT_EQUAL(0, chip8.V[0xF]);
 }
 
-static void sub_vy_from_vx_sets_borrow_to_1_if_no_underflow()
+static void sub_vy_from_vx_sets_borrow_to_1_if_no_underflow(void)
 {
     chip8.V[0] = 7;
     chip8.V[1] = 3;
@@ -209,13 +209,13 @@ static void sub_vy_from_vx_sets_borrow_to_1_if_no_underflow()
     TEST_ASSERT_EQUAL(1, chip8.V[0xF]);
 }
 
-static void set_i_to_address()
+static void set_i_to_address(void)
 {
     ch8_op_set_addr(&chip8, 0xA3FF);
     TEST_ASSERT_EQUAL(0x03FF, chip8.I);
 }
 
-static void jump_to_addr_plus_v0()
+static void jump_to_addr_plus_v0(void)
 {
     chip8.V[0] = 0x04;
     ch8_jump_to_addr_plus_v0(&chip8, 0xB199);
@@ -223,7 +223,7 @@ static void jump_to_addr_plus_v0()
 }
 
 // 0xEX9E
-static void key_down_skip_next_instruction()
+static void key_down_skip_next_instruction(void)
 {
     chip8.keypad[8] = CH8_KEYDOWN;
     chip8.PC = 5;
@@ -231,7 +231,7 @@ static void key_down_skip_next_instruction()
     TEST_ASSERT_EQUAL(7, chip8.PC);
 }
 
-static void key_down_does_not_skip_next_instruction()
+static void key_down_does_not_skip_next_instruction(void)
 {
     chip8.keypad[8] = CH8_KEYDOWN;
     chip8.keypad[4] = CH8_KEYUP;
@@ -241,7 +241,7 @@ static void key_down_does_not_skip_next_instruction()
 }
 
 // 0xEXA1
-static void key_up_skip_next_instruction()
+static void key_up_skip_next_instruction(void)
 {
     chip8.keypad[8] = CH8_KEYDOWN;
     chip8.PC = 5;
@@ -249,7 +249,7 @@ static void key_up_skip_next_instruction()
     TEST_ASSERT_EQUAL(5, chip8.PC);
 }
 
-static void key_up_does_not_skip_next_instruction()
+static void key_up_does_not_skip_next_instruction(void)
 {
     chip8.keypad[9] = CH8_KEYDOWN;
     chip8.keypad[4] = CH8_KEYUP;
