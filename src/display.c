@@ -106,7 +106,7 @@ void draw_sprite(ch8_cpu *cpu, uint8_t x, uint8_t y, uint8_t h)
 {
     INIT_CHECK();
 
-    SDL_Rect src;
+    SDL_Rect src = { 0 };
     src.x = x;
     src.y = y;
     src.w = 8;
@@ -114,10 +114,10 @@ void draw_sprite(ch8_cpu *cpu, uint8_t x, uint8_t y, uint8_t h)
 
     SDL_Surface *surface = NULL;
     SDL_LockTextureToSurface(display, &src, &surface);
-    SDL_memcpy(surface->pixels, &cpu->memory[cpu->I], src.w * src.h);
+    SDL_memcpy(surface->pixels, &cpu->memory[cpu->I], (size_t)src.w * src.h);
     SDL_UnlockTexture(display);
 
-    SDL_Rect dest;
+    SDL_Rect dest = { 0 };
     dest.x = src.x = 0;
     dest.y = src.y = 0;
 

@@ -5,7 +5,7 @@
 
 ch8_cpu *cpu = NULL;
 
-void cleanup()
+void cleanup(void)
 {
     display_quit();
     if (cpu != NULL)
@@ -22,10 +22,10 @@ int main(int argc, char *argv[])
     ch8_init(&cpu);
     display_init();
 
-    if (!ch8_load_rom_file(cpu, "test_opcode.ch8"))
+    /*if (!ch8_load_rom_file(cpu, "test_opcode.ch8"))
     {
         exit(EXIT_FAILURE);
-    }
+    }*/
 
     while (1)
     {

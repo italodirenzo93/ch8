@@ -144,7 +144,7 @@ void ch8_op_add_vx_to_vy(ch8_cpu *cpu, uint16_t opcode)
     }
     else
     {
-        cpu->V[vx] = result;
+        cpu->V[vx] = (uint8_t) result;
         cpu->V[0xF] = 0;
     }
 }
@@ -161,7 +161,7 @@ void ch8_op_sub_vy_from_vx(ch8_cpu *cpu, uint16_t opcode)
     }
     else
     {
-        cpu->V[vx] = result;
+        cpu->V[vx] = (uint8_t) result;
         cpu->V[0xF] = 1;
     }
 }

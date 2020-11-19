@@ -1,3 +1,7 @@
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -11,6 +15,7 @@ void ch8_init(ch8_cpu **pcpu)
     assert(pcpu != NULL);
 
     ch8_cpu *cpu = (ch8_cpu *)malloc(sizeof(ch8_cpu));
+    assert(cpu != NULL);
     memset(cpu, 0, sizeof(ch8_cpu));
     (*pcpu) = cpu;
 
