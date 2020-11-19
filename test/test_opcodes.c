@@ -184,6 +184,31 @@ static void add_vx_to_vy_sets_carry_to_0_if_no_overflow()
     TEST_ASSERT_EQUAL(0, chip8.V[0xF]);
 }
 
+// 0x8XY5
+static void sub_vy_from_vx_sets_borrow_to_0_if_underflow()
+{
+    chip8.V[0] = 6;
+    chip8.V[1] = 7;
+    chip8.V[0xF] = 0;
+
+    ch8_op_sub_vy_from_vx(&chip8, 0x8015);
+
+    TEST_ASSERT_EQUAL(0, chip8.V[0]);
+    TEST_ASSERT_EQUAL(0, chip8.V[0xF]);
+}
+
+static void sub_vy_from_vx_sets_borrow_to_1_if_no_underflow()
+{
+    chip8.V[0] = 7;
+    chip8.V[1] = 3;
+    chip8.V[0xF] = 0;
+
+    ch8_op_sub_vy_from_vx(&chip8, 0x8015);
+
+    TEST_ASSERT_EQUAL(4, chip8.V[0]);
+    TEST_ASSERT_EQUAL(1, chip8.V[0xF]);
+}
+
 static void set_i_to_address()
 {
     ch8_op_set_addr(&chip8, 0xA3FF);
@@ -265,6 +290,8 @@ int main()
     RUN_TEST(bitwise_xor);
     RUN_TEST(add_vx_to_vy_sets_carry_to_1_if_overflow);
     RUN_TEST(add_vx_to_vy_sets_carry_to_0_if_no_overflow);
+    RUN_TEST(sub_vy_from_vx_sets_borrow_to_0_if_underflow);
+    RUN_TEST(sub_vy_from_vx_sets_borrow_to_1_if_no_underflow);
 
     // 0xA000
     RUN_TEST(set_i_to_address);

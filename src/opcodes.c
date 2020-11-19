@@ -139,12 +139,30 @@ void ch8_op_add_vx_to_vy(ch8_cpu *cpu, uint16_t opcode)
     if (result > 0xFF)
     {
         // set the "carry" flag
-        cpu->V[0xF] = 1;
         cpu->V[vx] = 0xFF;
+        cpu->V[0xF] = 1;
     }
     else
     {
         cpu->V[vx] = result;
+        cpu->V[0xF] = 0;
+    }
+}
+
+void ch8_op_sub_vy_from_vx(ch8_cpu *cpu, uint16_t opcode)
+{
+    uint8_t vx = (opcode & 0x0F00) >> 8;
+    uint8_t vy = (opcode & 0x00F0) >> 4;
+    uint16_t result = cpu->V[vx] - cpu->V[vy];
+    if (result > 0xFF)
+    {
+        cpu->V[vx] = 0;
+        cpu->V[0xF] = 0;
+    }
+    else
+    {
+        cpu->V[vx] = result;
+        cpu->V[0xF] = 1;
     }
 }
 

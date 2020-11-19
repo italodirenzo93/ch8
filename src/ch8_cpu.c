@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <assert.h>
 #include <string.h>
+#include <assert.h>
 #include <time.h>
 
 #include "ch8_cpu.h"
@@ -183,6 +183,7 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
             ch8_op_add_vx_to_vy(cpu, opcode);
             break;
         case 0x0005:
+            ch8_op_sub_vy_from_vx(cpu, opcode);
             break;
         case 0x0006:
             break;
