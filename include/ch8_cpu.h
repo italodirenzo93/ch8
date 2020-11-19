@@ -17,7 +17,7 @@
 #define CH8_CALL_STACK_OFFSET 3744
 #define CH8_DISPLAY_REFRESH_OFFSET 3840
 
-struct ch8_cpu
+typedef struct ch8_cpu
 {
     uint8_t memory[CH8_MEM_SIZE];
     uint16_t I;
@@ -28,9 +28,7 @@ struct ch8_cpu
     time_t soundTimer;
     uint8_t keypad[16];
     bool running;
-};
-
-typedef struct ch8_cpu ch8_cpu;
+} ch8_cpu;
 
 void ch8_init(ch8_cpu **pcpu);
 void ch8_quit(ch8_cpu **pcpu);
