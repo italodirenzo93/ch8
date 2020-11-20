@@ -23,7 +23,7 @@ typedef enum input_key
 #define CH8_KEYDOWN 1
 #define CH8_KEYUP 0
 
-void display_init();
+int display_init();
 void display_quit();
 void display_event_loop(struct ch8_cpu *cpu);
 void display_clear();

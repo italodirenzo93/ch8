@@ -2,6 +2,7 @@
 
 #include "display.h"
 #include "ch8_cpu.h"
+#include "log.h"
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
@@ -10,9 +11,7 @@ SDL_Texture *display = NULL;
 SDL_Event event;
 bool initialized = false;
 
-#define INIT_CHECK()  \
-    if (!initialized) \
-    return
+#define INIT_CHECK() if (!initialized) return
 
 static input_key scancode_to_key_register(SDL_Scancode scancode)
 {
@@ -31,18 +30,44 @@ static input_key scancode_to_key_register(SDL_Scancode scancode)
     }
 }
 
-void display_init()
+int display_init()
 {
     if (initialized)
-        return;
+    {
+        log_info("Display sub-system already initialized\n");
+        return 1; // designate some kind of error code
+    }
 
-    SDL_Init(SDL_INIT_VIDEO);
+    if (SDL_Init(SDL_INIT_VIDEO) != 0)
+    {
+        log_error("Unable to initialize SDL: %s\n", SDL_GetError());
+        return 1;
+    }
 
     window = SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+    if (window == NULL)
+    {
+        log_error("Failed to create window: %s\n", SDL_GetError());
+        return 1;
+    }
+    
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (renderer == NULL)
+    {
+        log_error("Failed to create renderer: %s\n", SDL_GetError());
+        return 1;
+    }
+    
     display = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    if (display == NULL)
+    {
+        log_error("Failed to create render target: %s\n", SDL_GetError());
+        return 1;
+    }
 
     initialized = true;
+    
+    return 0;
 }
 
 void display_quit()
@@ -51,14 +76,18 @@ void display_quit()
 
     SDL_DestroyTexture(display);
     display = NULL;
+    log_debug("Render target destroyed\n");
 
     SDL_DestroyRenderer(renderer);
     renderer = NULL;
+    log_debug("Renderer destroyed\n");
 
     SDL_DestroyWindow(window);
     window = NULL;
+    log_debug("Window destroyed\n");
 
     SDL_Quit();
+    log_debug("Quit SDL\n");
 
     initialized = false;
 }
@@ -74,7 +103,6 @@ void display_event_loop(ch8_cpu *cpu)
             break;
         case SDL_KEYDOWN:
         {
-            //printf("Key down: %s\n", SDL_GetScancodeName(event.key.keysym.scancode));
             input_key key = scancode_to_key_register(event.key.keysym.scancode);
             if (key != INPUT_KEY_UNKNOWN)
             {
@@ -84,7 +112,6 @@ void display_event_loop(ch8_cpu *cpu)
         }
         case SDL_KEYUP:
         {
-            //printf("Key up: %s\n", SDL_GetScancodeName(event.key.keysym.scancode));
             input_key key = scancode_to_key_register(event.key.keysym.scancode);
             if (key != INPUT_KEY_UNKNOWN)
             {
@@ -100,6 +127,7 @@ void display_clear()
 {
     INIT_CHECK();
     SDL_RenderClear(renderer);
+    log_debug("Render clear\n");
 }
 
 void draw_sprite(ch8_cpu *cpu, uint8_t x, uint8_t y, uint8_t h)

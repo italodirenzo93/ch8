@@ -9,19 +9,27 @@
 
 #include "ch8_cpu.h"
 #include "opcodes.h"
+#include "log.h"
 
-void ch8_init(ch8_cpu **pcpu)
+int ch8_init(ch8_cpu **pcpu)
 {
     assert(pcpu != NULL);
 
     ch8_cpu *cpu = (ch8_cpu *)malloc(sizeof(ch8_cpu));
-    assert(cpu != NULL);
+    if (cpu == NULL)
+    {
+        log_debug("CHIP-8 VM allocation failed\n");
+        return 1;
+    }
+    
     memset(cpu, 0, sizeof(ch8_cpu));
-    (*pcpu) = cpu;
-
     ch8_reset(cpu);
 
+    (*pcpu) = cpu;
+    
     srand((unsigned int)time(NULL));
+    
+    return 0;
 }
 
 void ch8_quit(ch8_cpu **pcpu)
@@ -61,12 +69,15 @@ void ch8_load_rom(ch8_cpu *cpu, uint8_t *program, size_t size)
 bool ch8_load_rom_file(ch8_cpu *cpu, const char *file)
 {
     assert(cpu != NULL);
+    assert(strlen(file) != 0);
+    
+    log_debug("Loading ROM file %s...", file);
 
     size_t len = 0;
     FILE *f = fopen(file, "rb");
     if (f == NULL)
     {
-        fprintf(stderr, "Could not open file %s...\n", file);
+        log_error("Could not open file %s...\n", file);
         return false;
     }
 
@@ -76,7 +87,7 @@ bool ch8_load_rom_file(ch8_cpu *cpu, const char *file)
     rewind(f);
     if (len > CH8_MAX_PROGRAM_SIZE)
     {
-        fprintf(stderr, "File size too large (%zu bytes)\n", len);
+        log_error("File size too large (%zu bytes)\n", len);
         return false;
     }
 
@@ -103,13 +114,16 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
     assert(cpu != NULL);
 
     if (!cpu->running)
+    {
+        log_error("Could not execute opcode because CHIP-8 VM is not running\n");
         return false;
+    }
 
     uint16_t opcode = ch8_next_opcode(cpu);
     if (opcode == 0)
     {
         cpu->running = false;
-        printf("ROM exited\n");
+        log_debug("ROM exited\n");
         return false;
     }
 
@@ -128,7 +142,7 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
             break;
 
         default:
-            printf("Call machine code routine at address\n");
+            log_debug("Call machine code routine at address\n");
             break;
         }
         break;
@@ -226,7 +240,7 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
         break;
     }
     default:
-        printf("Unrecognized opcode: %X\n", opcode);
+        log_error("Unrecognized opcode: %X\n", opcode);
         return false;
     }
 

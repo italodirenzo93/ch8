@@ -30,7 +30,7 @@ typedef struct ch8_cpu
     bool running;
 } ch8_cpu;
 
-void ch8_init(ch8_cpu **pcpu);
+int ch8_init(ch8_cpu **pcpu);
 void ch8_quit(ch8_cpu **pcpu);
 void ch8_reset(ch8_cpu *cpu);
 void ch8_load_rom(ch8_cpu *cpu, uint8_t *program, size_t size);
