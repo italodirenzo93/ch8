@@ -6,6 +6,7 @@
 #include "log.h"
 
 ch8_cpu *cpu = NULL;
+const uint8_t program[] = { 0x00, 0xE0 };
 
 void cleanup(void)
 {
@@ -38,6 +39,8 @@ int main(int argc, char *argv[])
         log_error("Failed to initialize the display\n");
         exit(EXIT_FAILURE);
     }
+
+    ch8_load_rom(cpu, program, 2);
 
     /*if (!ch8_load_rom_file(cpu, "test_opcode.ch8"))
     {

@@ -14,9 +14,9 @@ endif()
 include_directories(${SDL2_INCLUDE_DIRS} include)
 
 # add the executable
-set(HEADERS include/ch8_cpu.h include/display.h include/opcodes.h include/log.h)
-add_executable(ch8 src/main.c src/ch8_cpu.c src/opcodes.c src/display.c src/log.c ${HEADERS})
+set(HEADERS "include/ch8_cpu.h" "include/display.h" "include/opcodes.h" "include/log.h")
+add_executable(ch8 ${HEADERS} "src/main.c" "src/ch8_cpu.c" "src/opcodes.c" "src/display.c" "src/log.c")
 target_link_libraries(ch8 ${SDL2_LIBRARIES})
 
 # add test executable
-add_executable(test_opcodes test/vendor/unity.c test/test_opcodes.c src/opcodes.c ${HEADERS})
+add_executable(test_opcodes ${HEADERS} "test/vendor/unity.c" "test/test_opcodes.c" "src/opcodes.c" "test/log.c")

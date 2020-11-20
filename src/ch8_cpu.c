@@ -57,13 +57,16 @@ void ch8_reset(ch8_cpu *cpu)
 
     cpu->delayTimer = 0;
     cpu->soundTimer = 0;
+
+    log_debug("CHIP-VM (re)-initialized");
 }
 
-void ch8_load_rom(ch8_cpu *cpu, uint8_t *program, size_t size)
+void ch8_load_rom(ch8_cpu *cpu, const uint8_t *program, size_t size)
 {
     assert(cpu != NULL);
     assert(size <= CH8_MAX_PROGRAM_SIZE);
     memcpy(cpu->memory + CH8_PROGRAM_START_OFFSET, program, size);
+    log_debug("%d byte-long ROM binary loaded", size);
 }
 
 bool ch8_load_rom_file(ch8_cpu *cpu, const char *file)
@@ -77,7 +80,7 @@ bool ch8_load_rom_file(ch8_cpu *cpu, const char *file)
     FILE *f = fopen(file, "rb");
     if (f == NULL)
     {
-        log_error("Could not open file %s...\n", file);
+        log_error("Could not open file %s...", file);
         return false;
     }
 
@@ -87,7 +90,7 @@ bool ch8_load_rom_file(ch8_cpu *cpu, const char *file)
     rewind(f);
     if (len > CH8_MAX_PROGRAM_SIZE)
     {
-        log_error("File size too large (%zu bytes)\n", len);
+        log_error("File size too large (%zu bytes)", len);
         return false;
     }
 
@@ -115,7 +118,7 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
 
     if (!cpu->running)
     {
-        log_error("Could not execute opcode because CHIP-8 VM is not running\n");
+        log_error("Could not execute opcode because CHIP-8 VM is not running");
         return false;
     }
 
@@ -123,7 +126,7 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
     if (opcode == 0)
     {
         cpu->running = false;
-        log_debug("ROM exited\n");
+        log_debug("ROM exited");
         return false;
     }
 
@@ -142,7 +145,7 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
             break;
 
         default:
-            log_debug("Call machine code routine at address\n");
+            log_debug("Call machine code routine at address");
             break;
         }
         break;
@@ -240,7 +243,7 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
         break;
     }
     default:
-        log_error("Unrecognized opcode: %X\n", opcode);
+        log_error("Unrecognized opcode: %X", opcode);
         return false;
     }
 
