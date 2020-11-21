@@ -25,6 +25,9 @@ void ch8_op_and(struct ch8_cpu *cpu, uint16_t opcode);
 void ch8_op_xor(struct ch8_cpu *cpu, uint16_t opcode);
 void ch8_op_add_vx_to_vy(struct ch8_cpu *cpu, uint16_t opcode);
 void ch8_op_sub_vy_from_vx(struct ch8_cpu *cpu, uint16_t opcode);
+void ch8_op_bitshift_right_vx_to_vf(struct ch8_cpu *cpu, uint16_t opcode);
+void ch8_op_set_vx_to_vx_sub_vy(struct ch8_cpu *cpu, uint16_t opcode);
+void ch8_op_bitshift_left_vx_to_vf(struct ch8_cpu *cpu, uint16_t opcode);
 
 void ch8_op_set_addr(struct ch8_cpu *cpu, uint16_t opcode);
 void ch8_jump_to_addr_plus_v0(struct ch8_cpu *cpu, uint16_t opcode);

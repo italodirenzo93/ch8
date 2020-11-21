@@ -149,6 +149,8 @@ void ch8_op_add_vx_to_vy(ch8_cpu *cpu, uint16_t opcode)
         cpu->V[vx] = (uint8_t) result;
         cpu->V[0xF] = 0;
     }
+    
+    log_debug("ADD V[%d] += V[%d] : V[0xF] = %d", vx, vy, cpu->V[0xF]);
 }
 
 void ch8_op_sub_vy_from_vx(ch8_cpu *cpu, uint16_t opcode)
@@ -166,6 +168,32 @@ void ch8_op_sub_vy_from_vx(ch8_cpu *cpu, uint16_t opcode)
         cpu->V[vx] = (uint8_t) result;
         cpu->V[0xF] = 1;
     }
+    
+    log_debug("SUB V[%d] -= V[%d] : V[0xF] = %d", vx, vy, cpu->V[0xF]);
+}
+
+void ch8_op_bitshift_right_vx_to_vf(ch8_cpu *cpu, uint16_t opcode)
+{
+    uint8_t vx = (opcode & 0x0F00) >> 8;
+    cpu->V[0xF] = cpu->V[vx] & 0x1;
+    cpu->V[vx] >>= 1;
+    log_debug("SHIFTR V[%d] >>= 1", vx);
+}
+
+void ch8_op_set_vx_to_vx_sub_vy(ch8_cpu *cpu, uint16_t opcode)
+{
+    uint16_t vx = (opcode & 0x0F00) >> 8;
+    uint16_t vy = (opcode & 0x00F0) >> 8;
+    cpu->V[0xF] = cpu->V[vy] < cpu->V[vx] ? 0x00 : 0x01;
+    cpu->V[vx] = cpu->V[vy] - cpu->V[vx];
+}
+
+void ch8_op_bitshift_left_vx_to_vf(ch8_cpu *cpu, uint16_t opcode)
+{
+    uint8_t vx = (opcode & 0x0F00) >> 8;
+    cpu->V[0xF] = (cpu->V[vx] >> 7) & 0x1;
+    cpu->V[vx] <<= 1;
+    log_debug("SHIFTL V[%d] >>= 1", vx);
 }
 
 void ch8_op_set_addr(ch8_cpu *cpu, uint16_t opcode)

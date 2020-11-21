@@ -203,10 +203,13 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
             ch8_op_sub_vy_from_vx(cpu, opcode);
             break;
         case 0x0006:
+            ch8_op_bitshift_right_vx_to_vf(cpu, opcode);
             break;
         case 0x0007:
+            ch8_op_set_vx_to_vx_sub_vy(cpu, opcode);
             break;
         case 0x000E:
+            ch8_op_bitshift_left_vx_to_vf(cpu, opcode);
             break;
         }
         break;
