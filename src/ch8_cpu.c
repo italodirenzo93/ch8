@@ -12,43 +12,6 @@
 #include "opcodes.h"
 #include "log.h"
 
-#define TIMER_INTERVAL 16.666666666667
-
-static int _delay_timer_func(void *data)
-{
-    ch8_cpu *cpu = (ch8_cpu *)data;
-    while (cpu->running) {
-        SDL_Delay(TIMER_INTERVAL); // 60hz
-        if (SDL_AtomicGet(&cpu->delayTimer) > 0) {
-            SDL_AtomicDecRef(&cpu->delayTimer);
-        }
-    }
-    
-    return 0;
-}
-
-static int _sound_timer_func(void *data)
-{
-    ch8_cpu *cpu = (ch8_cpu *)data;
-    bool playing = false;
-    
-    while (cpu->running) {
-        while (SDL_AtomicGet(&cpu->soundTimer) > 0) {
-            if (!playing) {
-                // Start playing beeping sound
-                playing = true;
-            }
-            SDL_Delay(TIMER_INTERVAL); // 60hz
-            SDL_AtomicDecRef(&cpu->soundTimer);
-        }
-        
-        // Stop beeping sound
-        playing = false;
-    }
-    
-    return 0;
-}
-
 int ch8_init(ch8_cpu **pcpu)
 {
     assert(pcpu != NULL);
@@ -79,19 +42,6 @@ void ch8_quit(ch8_cpu **pcpu)
     {
         cpu->running = false;
         
-        // Cleanup timer threads
-        if (cpu->delayTimerThread != NULL) {
-            SDL_WaitThread(cpu->delayTimerThread, NULL);
-            cpu->delayTimerThread = NULL;
-            log_debug("Delay timer thread stopped");
-        }
-        
-        if (cpu->soundTimerThread != NULL) {
-            SDL_WaitThread(cpu->soundTimerThread, NULL);
-            cpu->soundTimerThread = NULL;
-            log_debug("Sound timer thread stopped");
-        }
-        
         free(cpu);
         cpu = NULL;
     }
@@ -111,17 +61,6 @@ void ch8_reset(ch8_cpu *cpu)
 
     SDL_AtomicSet(&cpu->delayTimer, 0);
     SDL_AtomicSet(&cpu->soundTimer, 0);
-    
-    // Create timer threads
-    if (cpu->delayTimerThread == NULL) {
-        SDL_CreateThread(_delay_timer_func, "DelayTimer", cpu);
-        log_debug("Delay timer thread started");
-    }
-    
-    if (cpu->soundTimerThread == NULL) {
-        SDL_CreateThread(_sound_timer_func, "SoundTimer", cpu);
-        log_debug("Sound timer thread started");
-    }
 
     log_debug("CHIP-VM (re)-initialized");
 }

@@ -8,6 +8,47 @@
 #include "ch8_cpu.h"
 #include "log.h"
 
+#define TIMER_INTERVAL 17
+
+static int _delay_timer_thread_fn(void* data)
+{
+    ch8_cpu* cpu = (ch8_cpu*)data;
+    if (SDL_AtomicGet(&cpu->delayTimer) <= 0) {
+        return EXIT_FAILURE;
+    }
+    
+    log_debug("Starting delay timer thread");
+
+    while (cpu->running && !SDL_AtomicDecRef(&cpu->delayTimer)) {
+        SDL_Delay(TIMER_INTERVAL);
+    }
+    
+    log_debug("Exiting delay timer thread");
+
+    return EXIT_SUCCESS;
+}
+
+static int _sound_timer_thread_fn(void* data)
+{
+    ch8_cpu* cpu = (ch8_cpu*)data;
+    if (SDL_AtomicGet(&cpu->soundTimer) <= 0) {
+        return EXIT_FAILURE;
+    }
+    
+    log_debug("Starting sound timer thread");
+
+    while (cpu->running && !SDL_AtomicDecRef(&cpu->soundTimer)) {
+        SDL_Delay(TIMER_INTERVAL);
+        // pump sound data
+    }
+
+    // stop pumping sound data
+    
+    log_debug("Exiting sound timer thread");
+
+    return EXIT_SUCCESS;
+}
+
 void ch8_op_return(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
@@ -263,7 +304,14 @@ void ch8_op_set_delay_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
 {
     uint16_t vx = (opcode & 0x0F00) >> 8;
     uint8_t timerVal = cpu->V[vx];
-    SDL_AtomicSet(&cpu->delayTimer, timerVal);
+    int prev = SDL_AtomicSet(&cpu->delayTimer, timerVal);
+
+    // If the timer was previously set to 0, then a thread isn't running and we need to start a new one
+    if (prev == 0) {
+        SDL_Thread* thread = SDL_CreateThread(_delay_timer_thread_fn, "DelayTimer", cpu);
+        SDL_DetachThread(thread);
+    }
+
     log_debug("TIMER set delay timer to V[%d] (%d)", vx, timerVal);
 }
 
@@ -272,6 +320,13 @@ void ch8_op_set_sound_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
 {
     uint16_t vx = (opcode & 0x0F00) >> 8;
     uint8_t timerVal = cpu->V[vx];
-    SDL_AtomicSet(&cpu->soundTimer, timerVal);
+    int prev = SDL_AtomicSet(&cpu->soundTimer, timerVal);
+
+    // If the timer was previously set to 0, then a thread isn't running and we need to start a new one
+    if (prev == 0) {
+        SDL_Thread* thread = SDL_CreateThread(_sound_timer_thread_fn, "SoundTimer", cpu);
+        SDL_DetachThread(thread);
+    }
+
     log_debug("SOUND set sound timer to V[%d] (%d)", vx, timerVal);
 }

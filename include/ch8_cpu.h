@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <SDL_atomic.h>
-#include <SDL_thread.h>
 
 #define CH8_MEM_SIZE 4096
 #define CH8_STACK_SIZE 48
@@ -28,9 +27,7 @@ typedef struct ch8_cpu
     uint16_t PC;
     uint8_t stack[CH8_STACK_SIZE];
     SDL_atomic_t delayTimer;
-    SDL_Thread *delayTimerThread;
     SDL_atomic_t soundTimer;
-    SDL_Thread *soundTimerThread;
     uint8_t keypad[16];
     bool running;
 } ch8_cpu;
