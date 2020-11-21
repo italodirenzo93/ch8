@@ -37,4 +37,11 @@ void ch8_op_draw_sprite(struct ch8_cpu *cpu, uint16_t opcode);
 void ch8_op_keyop_eq(struct ch8_cpu *cpu, uint16_t opcode);
 void ch8_op_keyop_neq(struct ch8_cpu *cpu, uint16_t opcode);
 
+// 0xFX07
+void ch8_op_set_vx_to_delay_timer(struct ch8_cpu *cpu, uint16_t opcode);
+// 0xFX15
+void ch8_op_set_delay_timer_to_vx(struct ch8_cpu *cpu, uint16_t opcode);
+// 0xFX18
+void ch8_op_set_sound_timer_to_vx(struct ch8_cpu *cpu, uint16_t opcode);
+
 #endif

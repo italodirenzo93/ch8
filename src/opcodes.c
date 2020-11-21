@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <SDL.h>
 
 #include "opcodes.h"
 #include "display.h"
@@ -41,7 +42,7 @@ void ch8_op_cond_eq(ch8_cpu *cpu, uint16_t opcode)
     if (cpu->V[vx] == operand)
     {
         // Skip the next instruction
-        cpu->PC += 2;
+        cpu->PC += PC_STEP_SIZE;
     }
 }
 
@@ -53,7 +54,7 @@ void ch8_op_cond_neq(ch8_cpu *cpu, uint16_t opcode)
     if (cpu->V[vx] != operand)
     {
         // Skip the next instruction
-        cpu->PC += 2;
+        cpu->PC += PC_STEP_SIZE;
     }
 }
 
@@ -65,7 +66,7 @@ void ch8_op_cond_vx_eq_vy(ch8_cpu *cpu, uint16_t opcode)
     if (cpu->V[vx] == cpu->V[vy])
     {
         // Skip the next instruction
-        cpu->PC += 2;
+        cpu->PC += PC_STEP_SIZE;
     }
 }
 
@@ -77,7 +78,7 @@ void ch8_op_cond_vx_neq_vy(ch8_cpu *cpu, uint16_t opcode)
     if (cpu->V[vx] != cpu->V[vy])
     {
         // Skip the next instruction
-        cpu->PC += 2;
+        cpu->PC += PC_STEP_SIZE;
     }
 }
 
@@ -138,10 +139,10 @@ void ch8_op_add_vx_to_vy(ch8_cpu *cpu, uint16_t opcode)
     uint8_t vx = (opcode & 0x0F00) >> 8;
     uint8_t vy = (opcode & 0x00F0) >> 4;
     uint16_t result = cpu->V[vx] + cpu->V[vy];
-    if (result > 0xFF)
+    if (result > UINT8_MAX)
     {
         // set the "carry" flag
-        cpu->V[vx] = 0xFF;
+        cpu->V[vx] = UINT8_MAX;
         cpu->V[0xF] = 1;
     }
     else
@@ -158,7 +159,7 @@ void ch8_op_sub_vy_from_vx(ch8_cpu *cpu, uint16_t opcode)
     uint8_t vx = (opcode & 0x0F00) >> 8;
     uint8_t vy = (opcode & 0x00F0) >> 4;
     uint16_t result = cpu->V[vx] - cpu->V[vy];
-    if (result > 0xFF)
+    if (result > UINT8_MAX)
     {
         cpu->V[vx] = 0;
         cpu->V[0xF] = 0;
@@ -233,7 +234,7 @@ void ch8_op_keyop_eq(ch8_cpu *cpu, uint16_t opcode)
     log_debug("KEY check if keypad[%d] is down\n", key);
     if (key == CH8_KEYDOWN)
     {
-        cpu->PC += 2;
+        cpu->PC += PC_STEP_SIZE;
     }
 }
 
@@ -244,6 +245,33 @@ void ch8_op_keyop_neq(ch8_cpu *cpu, uint16_t opcode)
     log_debug("KEY check if keypad[%d] is up\n", key);
     if (key == CH8_KEYUP)
     {
-        cpu->PC += 2;
+        cpu->PC += PC_STEP_SIZE;
     }
+}
+
+// 0xFX07
+void ch8_op_set_vx_to_delay_timer(ch8_cpu *cpu, uint16_t opcode)
+{
+    uint16_t vx = (opcode & 0x0F00) >> 8;
+    int timerValue = SDL_AtomicGet(&cpu->delayTimer);
+    cpu->V[vx] = timerValue > UINT8_MAX ? UINT8_MAX : timerValue < 0 ? 0 : (uint8_t) timerValue;
+    log_debug("TIMER set V[%d] = delay timer val %d", vx, timerValue);
+}
+
+// 0xFX15
+void ch8_op_set_delay_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
+{
+    uint16_t vx = (opcode & 0x0F00) >> 8;
+    uint8_t timerVal = cpu->V[vx];
+    SDL_AtomicSet(&cpu->delayTimer, timerVal);
+    log_debug("TIMER set delay timer to V[%d] (%d)", vx, timerVal);
+}
+
+// 0xFX18
+void ch8_op_set_sound_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
+{
+    uint16_t vx = (opcode & 0x0F00) >> 8;
+    uint8_t timerVal = cpu->V[vx];
+    SDL_AtomicSet(&cpu->soundTimer, timerVal);
+    log_debug("SOUND set sound timer to V[%d] (%d)", vx, timerVal);
 }

@@ -6,10 +6,48 @@
 #include <string.h>
 #include <assert.h>
 #include <time.h>
+#include <SDL.h>
 
 #include "ch8_cpu.h"
 #include "opcodes.h"
 #include "log.h"
+
+#define TIMER_INTERVAL 16.666666666667
+
+static int _delay_timer_func(void *data)
+{
+    ch8_cpu *cpu = (ch8_cpu *)data;
+    while (cpu->running) {
+        SDL_Delay(TIMER_INTERVAL); // 60hz
+        if (SDL_AtomicGet(&cpu->delayTimer) > 0) {
+            SDL_AtomicDecRef(&cpu->delayTimer);
+        }
+    }
+    
+    return 0;
+}
+
+static int _sound_timer_func(void *data)
+{
+    ch8_cpu *cpu = (ch8_cpu *)data;
+    bool playing = false;
+    
+    while (cpu->running) {
+        while (SDL_AtomicGet(&cpu->soundTimer) > 0) {
+            if (!playing) {
+                // Start playing beeping sound
+                playing = true;
+            }
+            SDL_Delay(TIMER_INTERVAL); // 60hz
+            SDL_AtomicDecRef(&cpu->soundTimer);
+        }
+        
+        // Stop beeping sound
+        playing = false;
+    }
+    
+    return 0;
+}
 
 int ch8_init(ch8_cpu **pcpu)
 {
@@ -35,9 +73,25 @@ int ch8_init(ch8_cpu **pcpu)
 void ch8_quit(ch8_cpu **pcpu)
 {
     assert(pcpu != NULL);
+    
     ch8_cpu *cpu = *pcpu;
     if (cpu != NULL)
     {
+        cpu->running = false;
+        
+        // Cleanup timer threads
+        if (cpu->delayTimerThread != NULL) {
+            SDL_WaitThread(cpu->delayTimerThread, NULL);
+            cpu->delayTimerThread = NULL;
+            log_debug("Delay timer thread stopped");
+        }
+        
+        if (cpu->soundTimerThread != NULL) {
+            SDL_WaitThread(cpu->soundTimerThread, NULL);
+            cpu->soundTimerThread = NULL;
+            log_debug("Sound timer thread stopped");
+        }
+        
         free(cpu);
         cpu = NULL;
     }
@@ -46,7 +100,7 @@ void ch8_quit(ch8_cpu **pcpu)
 void ch8_reset(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
-
+    
     memset(cpu->memory, 0, CH8_MEM_SIZE);
     memset(cpu->V, 0, CH8_NUM_REGISTERS);
     memset(cpu->stack, 0, CH8_STACK_SIZE);
@@ -55,8 +109,19 @@ void ch8_reset(ch8_cpu *cpu)
     cpu->PC = CH8_PROGRAM_START_OFFSET;
     cpu->running = true;
 
-    cpu->delayTimer = 0;
-    cpu->soundTimer = 0;
+    SDL_AtomicSet(&cpu->delayTimer, 0);
+    SDL_AtomicSet(&cpu->soundTimer, 0);
+    
+    // Create timer threads
+    if (cpu->delayTimerThread == NULL) {
+        SDL_CreateThread(_delay_timer_func, "DelayTimer", cpu);
+        log_debug("Delay timer thread started");
+    }
+    
+    if (cpu->soundTimerThread == NULL) {
+        SDL_CreateThread(_sound_timer_func, "SoundTimer", cpu);
+        log_debug("Sound timer thread started");
+    }
 
     log_debug("CHIP-VM (re)-initialized");
 }
@@ -245,13 +310,41 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
         }
         break;
     }
+    case 0xF000:
+    {
+        switch (opcode & 0x00FF)
+        {
+            case 0x0007:
+                ch8_op_set_vx_to_delay_timer(cpu, opcode);
+                break;
+            case 0x000A:
+                break;
+            case 0x0015:
+                ch8_op_set_delay_timer_to_vx(cpu, opcode);
+                break;
+            case 0x0018:
+                ch8_op_set_sound_timer_to_vx(cpu, opcode);
+                break;
+            case 0x001E:
+                break;
+            case 0x0029:
+                break;
+            case 0x0033:
+                break;
+            case 0x0055:
+                break;
+            case 0x0065:
+                break;
+        }
+        break;
+    }
     default:
         log_error("Unrecognized opcode: %X", opcode);
         return false;
     }
 
     // Advance the program counter 2 bytes at a time
-    cpu->PC += 2;
+    cpu->PC += PC_STEP_SIZE;
 
     return true;
 }

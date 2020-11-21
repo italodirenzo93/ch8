@@ -4,7 +4,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <time.h>
+#include <SDL_atomic.h>
+#include <SDL_thread.h>
 
 #define CH8_MEM_SIZE 4096
 #define CH8_STACK_SIZE 48
@@ -17,6 +18,8 @@
 #define CH8_CALL_STACK_OFFSET 3744
 #define CH8_DISPLAY_REFRESH_OFFSET 3840
 
+#define PC_STEP_SIZE 2
+
 typedef struct ch8_cpu
 {
     uint8_t memory[CH8_MEM_SIZE];
@@ -24,8 +27,10 @@ typedef struct ch8_cpu
     uint8_t V[CH8_NUM_REGISTERS]; /* data registers */
     uint16_t PC;
     uint8_t stack[CH8_STACK_SIZE];
-    time_t delayTimer;
-    time_t soundTimer;
+    SDL_atomic_t delayTimer;
+    SDL_Thread *delayTimerThread;
+    SDL_atomic_t soundTimer;
+    SDL_Thread *soundTimerThread;
     uint8_t keypad[16];
     bool running;
 } ch8_cpu;
