@@ -54,6 +54,7 @@ void ch8_reset(ch8_cpu *cpu)
     memset(cpu->memory, 0, CH8_MEM_SIZE);
     memset(cpu->V, 0, CH8_NUM_REGISTERS);
     memset(cpu->stack, 0, CH8_STACK_SIZE);
+    memset(cpu->display, 0, CH8_DISPLAY_SIZE);
 
     cpu->I = 0;
     cpu->PC = CH8_PROGRAM_START_OFFSET;
@@ -257,6 +258,7 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
                 ch8_op_set_vx_to_delay_timer(cpu, opcode);
                 break;
             case 0x000A:
+                ch8_op_await_keypress(cpu, opcode);
                 break;
             case 0x0015:
                 ch8_op_set_delay_timer_to_vx(cpu, opcode);

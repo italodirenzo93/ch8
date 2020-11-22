@@ -61,12 +61,15 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    ch8_load_rom(cpu, fontROM, SDL_arraysize(fontROM));
+    //ch8_load_rom(cpu, fontROM, SDL_arraysize(fontROM));
 
     /*if (!ch8_load_rom_file(cpu, "test_opcode.ch8"))
     {
         exit(EXIT_FAILURE);
     }*/
+    
+    static const uint8_t program[] = { 0xF0, 0x0A};
+    ch8_load_rom(cpu, program, 2);
 
     while (1)
     {

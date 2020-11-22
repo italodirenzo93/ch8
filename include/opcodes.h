@@ -39,6 +39,8 @@ void ch8_op_keyop_neq(struct ch8_cpu *cpu, uint16_t opcode);
 
 // 0xFX07
 void ch8_op_set_vx_to_delay_timer(struct ch8_cpu *cpu, uint16_t opcode);
+// 0xFX0A
+void ch8_op_await_keypress(struct ch8_cpu *cpu, uint16_t opcode);
 // 0xFX15
 void ch8_op_set_delay_timer_to_vx(struct ch8_cpu *cpu, uint16_t opcode);
 // 0xFX18

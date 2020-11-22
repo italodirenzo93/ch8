@@ -19,6 +19,8 @@
 
 #define PC_STEP_SIZE 2
 
+typedef uint16_t ch8_opcode_t;
+
 typedef struct ch8_cpu
 {
     uint8_t memory[CH8_MEM_SIZE];
@@ -26,6 +28,7 @@ typedef struct ch8_cpu
     uint8_t V[CH8_NUM_REGISTERS]; /* data registers */
     uint16_t PC;
     uint8_t stack[CH8_STACK_SIZE];
+    uint8_t display[CH8_DISPLAY_SIZE];
     SDL_atomic_t delayTimer;
     SDL_atomic_t soundTimer;
     uint8_t keypad[16];

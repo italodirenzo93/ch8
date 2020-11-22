@@ -3,6 +3,7 @@
 #include "display.h"
 #include "ch8_cpu.h"
 #include "log.h"
+#include "input.h"
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
@@ -12,23 +13,6 @@ SDL_Event event;
 bool initialized = false;
 
 #define INIT_CHECK() if (!initialized) return
-
-static input_key scancode_to_key_register(SDL_Scancode scancode)
-{
-    switch (scancode)
-    {
-    default:
-        return INPUT_KEY_UNKNOWN;
-    case SDL_SCANCODE_UP:
-        return INPUT_KEY_UP;
-    case SDL_SCANCODE_DOWN:
-        return INPUT_KEY_DOWN;
-    case SDL_SCANCODE_LEFT:
-        return INPUT_KEY_LEFT;
-    case SDL_SCANCODE_RIGHT:
-        return INPUT_KEY_RIGHT;
-    }
-}
 
 int display_init()
 {
@@ -103,20 +87,14 @@ void display_event_loop(ch8_cpu *cpu)
             break;
         case SDL_KEYDOWN:
         {
-            input_key key = scancode_to_key_register(event.key.keysym.scancode);
-            if (key != INPUT_KEY_UNKNOWN)
-            {
-                cpu->keypad[key] = CH8_KEYDOWN;
-            }
+            input_key key = _scancode_to_key_register(event.key.keysym.scancode);
+            set_key_down(cpu, key);
             break;
         }
         case SDL_KEYUP:
         {
-            input_key key = scancode_to_key_register(event.key.keysym.scancode);
-            if (key != INPUT_KEY_UNKNOWN)
-            {
-                cpu->keypad[key] = CH8_KEYUP;
-            }
+            input_key key = _scancode_to_key_register(event.key.keysym.scancode);
+            set_key_up(cpu, key);
             break;
         }
         }

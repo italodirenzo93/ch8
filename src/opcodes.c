@@ -7,6 +7,7 @@
 #include "display.h"
 #include "ch8_cpu.h"
 #include "log.h"
+#include "input.h"
 
 #define TIMER_INTERVAL 17
 
@@ -270,22 +271,19 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
 
 void ch8_op_keyop_eq(ch8_cpu *cpu, uint16_t opcode)
 {
-    uint8_t vx = (opcode & 0x0F00) >> 8;
-    uint8_t key = cpu->keypad[vx];
+    input_key key = (input_key) ((opcode & 0x0F00) >> 8);
     log_debug("KEY check if keypad[%d] is down\n", key);
-    if (key == CH8_KEYDOWN)
-    {
+    if (is_key_down(cpu, key)) {
         cpu->PC += PC_STEP_SIZE;
     }
 }
 
 void ch8_op_keyop_neq(ch8_cpu *cpu, uint16_t opcode)
 {
-    uint8_t vx = (opcode & 0x0F00) >> 8;
-    uint8_t key = cpu->keypad[vx];
+    assert(cpu != NULL);
+    input_key key = (input_key) ((opcode & 0x0F00) >> 8);
     log_debug("KEY check if keypad[%d] is up\n", key);
-    if (key == CH8_KEYUP)
-    {
+    if (is_key_up(cpu, key)) {
         cpu->PC += PC_STEP_SIZE;
     }
 }
@@ -329,4 +327,20 @@ void ch8_op_set_sound_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
     }
 
     log_debug("SOUND set sound timer to V[%d] (%d)", vx, timerVal);
+}
+
+// 0xFX0A
+void ch8_op_await_keypress(ch8_cpu *cpu, uint16_t opcode)
+{
+    uint16_t vx = (opcode & 0x0F00) >> 8;
+ 
+    input_key key;
+    if (await_keypress(cpu, &key) != 0) {
+        log_error("Error awaiting keypress");
+        return;
+    }
+    
+    if (key != INPUT_KEY_UNKNOWN) {
+        cpu->V[vx] = (uint8_t) key;
+    }
 }
