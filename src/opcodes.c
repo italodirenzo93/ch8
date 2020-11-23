@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#include <SDL.h>
 
 #include "opcodes.h"
 #include "display.h"
@@ -9,52 +8,11 @@
 #include "log.h"
 #include "input.h"
 
-#define TIMER_INTERVAL 17
-
-static int _delay_timer_thread_fn(void* data)
-{
-    ch8_cpu* cpu = (ch8_cpu*)data;
-    if (SDL_AtomicGet(&cpu->delayTimer) <= 0) {
-        return EXIT_FAILURE;
-    }
-    
-    log_debug("Starting delay timer thread");
-
-    while (cpu->running && !SDL_AtomicDecRef(&cpu->delayTimer)) {
-        SDL_Delay(TIMER_INTERVAL);
-    }
-    
-    log_debug("Exiting delay timer thread");
-
-    return EXIT_SUCCESS;
-}
-
-static int _sound_timer_thread_fn(void* data)
-{
-    ch8_cpu* cpu = (ch8_cpu*)data;
-    if (SDL_AtomicGet(&cpu->soundTimer) <= 0) {
-        return EXIT_FAILURE;
-    }
-    
-    log_debug("Starting sound timer thread");
-
-    while (cpu->running && !SDL_AtomicDecRef(&cpu->soundTimer)) {
-        SDL_Delay(TIMER_INTERVAL);
-        // pump sound data
-    }
-
-    // stop pumping sound data
-    
-    log_debug("Exiting sound timer thread");
-
-    return EXIT_SUCCESS;
-}
-
 void ch8_op_return(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
     log_debug("Return from subroutine...\n");
-    cpu->PC = CH8_PROGRAM_START_OFFSET;
+    cpu->stack_pointer = 0;
 }
 
 void ch8_op_jumpto(ch8_cpu *cpu, uint16_t opcode)
@@ -69,7 +27,8 @@ void ch8_op_display_clear(ch8_cpu *cpu)
     log_debug("Clear display\n");
     
     int i;
-    for (i = 0; i < CH8_DISPLAY_SIZE; i++) {
+    int length = CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT;
+    for (i = 0; i < length; i++) {
         cpu->display[i] = 0;
     }
     
@@ -90,7 +49,7 @@ void ch8_op_cond_eq(ch8_cpu *cpu, uint16_t opcode)
     if (cpu->V[vx] == operand)
     {
         // Skip the next instruction
-        cpu->PC += PC_STEP_SIZE;
+        cpu->PC += CH8_PC_STEP_SIZE;
     }
 }
 
@@ -102,7 +61,7 @@ void ch8_op_cond_neq(ch8_cpu *cpu, uint16_t opcode)
     if (cpu->V[vx] != operand)
     {
         // Skip the next instruction
-        cpu->PC += PC_STEP_SIZE;
+        cpu->PC += CH8_PC_STEP_SIZE;
     }
 }
 
@@ -114,7 +73,7 @@ void ch8_op_cond_vx_eq_vy(ch8_cpu *cpu, uint16_t opcode)
     if (cpu->V[vx] == cpu->V[vy])
     {
         // Skip the next instruction
-        cpu->PC += PC_STEP_SIZE;
+        cpu->PC += CH8_PC_STEP_SIZE;
     }
 }
 
@@ -126,7 +85,7 @@ void ch8_op_cond_vx_neq_vy(ch8_cpu *cpu, uint16_t opcode)
     if (cpu->V[vx] != cpu->V[vy])
     {
         // Skip the next instruction
-        cpu->PC += PC_STEP_SIZE;
+        cpu->PC += CH8_PC_STEP_SIZE;
     }
 }
 
@@ -272,11 +231,11 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
     uint8_t vx = (opcode & 0x0F00) >> 8;
     uint8_t vy = (opcode & 0x00F0) >> 4;
     uint8_t n = (opcode & 0x000F);
-    uint8_t startIdx = vy * DISPLAY_WIDTH + vx;
+    uint8_t startIdx = vy * CH8_DISPLAY_WIDTH + vx;
     
     uint8_t destX = vx + 8;
     uint8_t destY = vy + n;
-    uint8_t destIdx = destY * DISPLAY_WIDTH + destX;
+    uint8_t destIdx = destY * CH8_DISPLAY_WIDTH + destX;
     
     int i, xor = 0;
     for (i = startIdx; i < destIdx; i++) {
@@ -296,7 +255,7 @@ void ch8_op_keyop_eq(ch8_cpu *cpu, uint16_t opcode)
     input_key key = (input_key) ((opcode & 0x0F00) >> 8);
     log_debug("KEY check if keypad[%d] is down\n", key);
     if (is_key_down(cpu, key)) {
-        cpu->PC += PC_STEP_SIZE;
+        cpu->PC += CH8_PC_STEP_SIZE;
     }
 }
 
@@ -306,7 +265,7 @@ void ch8_op_keyop_neq(ch8_cpu *cpu, uint16_t opcode)
     input_key key = (input_key) ((opcode & 0x0F00) >> 8);
     log_debug("KEY check if keypad[%d] is up\n", key);
     if (is_key_up(cpu, key)) {
-        cpu->PC += PC_STEP_SIZE;
+        cpu->PC += CH8_PC_STEP_SIZE;
     }
 }
 
@@ -314,41 +273,26 @@ void ch8_op_keyop_neq(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_set_vx_to_delay_timer(ch8_cpu *cpu, uint16_t opcode)
 {
     uint16_t vx = (opcode & 0x0F00) >> 8;
-    int timerValue = SDL_AtomicGet(&cpu->delayTimer);
-    cpu->V[vx] = timerValue > UINT8_MAX ? UINT8_MAX : timerValue < 0 ? 0 : (uint8_t) timerValue;
-    log_debug("TIMER set V[%d] = delay timer val %d", vx, timerValue);
+    cpu->V[vx] = cpu->delay_timer > UINT8_MAX ? UINT8_MAX : cpu->delay_timer < 0 ? 0 : (uint8_t) cpu->delay_timer;
+    log_debug("TIMER set V[%d] = delay timer val %d", vx, cpu->delay_timer);
 }
 
 // 0xFX15
 void ch8_op_set_delay_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
 {
     uint16_t vx = (opcode & 0x0F00) >> 8;
-    uint8_t timerVal = cpu->V[vx];
-    int prev = SDL_AtomicSet(&cpu->delayTimer, timerVal);
-
-    // If the timer was previously set to 0, then a thread isn't running and we need to start a new one
-    if (prev == 0) {
-        SDL_Thread* thread = SDL_CreateThread(_delay_timer_thread_fn, "DelayTimer", cpu);
-        SDL_DetachThread(thread);
-    }
-
-    log_debug("TIMER set delay timer to V[%d] (%d)", vx, timerVal);
+    cpu->delay_timer = cpu->V[vx];
+    
+    log_debug("TIMER set delay timer to V[%d] (%d)", vx, cpu->delay_timer);
 }
 
 // 0xFX18
 void ch8_op_set_sound_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
 {
     uint16_t vx = (opcode & 0x0F00) >> 8;
-    uint8_t timerVal = cpu->V[vx];
-    int prev = SDL_AtomicSet(&cpu->soundTimer, timerVal);
+    cpu->sound_timer = cpu->V[vx];
 
-    // If the timer was previously set to 0, then a thread isn't running and we need to start a new one
-    if (prev == 0) {
-        SDL_Thread* thread = SDL_CreateThread(_sound_timer_thread_fn, "SoundTimer", cpu);
-        SDL_DetachThread(thread);
-    }
-
-    log_debug("SOUND set sound timer to V[%d] (%d)", vx, timerVal);
+    log_debug("SOUND set sound timer to V[%d] (%d)", vx, cpu->sound_timer);
 }
 
 // 0xFX0A

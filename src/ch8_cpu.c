@@ -6,7 +6,6 @@
 #include <string.h>
 #include <assert.h>
 #include <time.h>
-#include <SDL.h>
 
 #include "ch8_cpu.h"
 #include "opcodes.h"
@@ -54,14 +53,15 @@ void ch8_reset(ch8_cpu *cpu)
     memset(cpu->memory, 0, CH8_MEM_SIZE);
     memset(cpu->V, 0, CH8_NUM_REGISTERS);
     memset(cpu->stack, 0, CH8_STACK_SIZE);
-    memset(cpu->display, 0, CH8_DISPLAY_SIZE);
+    memset(cpu->display, 0, CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT);
 
     cpu->I = 0;
     cpu->PC = CH8_PROGRAM_START_OFFSET;
+    cpu->stack_pointer = 0;
     cpu->running = true;
 
-    SDL_AtomicSet(&cpu->delayTimer, 0);
-    SDL_AtomicSet(&cpu->soundTimer, 0);
+    cpu->delay_timer = 0;
+    cpu->sound_timer = 0;
 
     log_debug("CHIP-VM (re)-initialized");
 }
@@ -288,7 +288,7 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
     }
 
     // Advance the program counter 2 bytes at a time
-    cpu->PC += PC_STEP_SIZE;
+    cpu->PC += CH8_PC_STEP_SIZE;
 
     return true;
 }
