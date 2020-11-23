@@ -45,5 +45,7 @@ void ch8_op_await_keypress(struct ch8_cpu *cpu, uint16_t opcode);
 void ch8_op_set_delay_timer_to_vx(struct ch8_cpu *cpu, uint16_t opcode);
 // 0xFX18
 void ch8_op_set_sound_timer_to_vx(struct ch8_cpu *cpu, uint16_t opcode);
+// 0xFX1E
+void ch8_op_add_vx_to_I(struct ch8_cpu *cpu, uint16_t opcode);
 
 #endif

@@ -269,6 +269,7 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
                 ch8_op_set_sound_timer_to_vx(cpu, opcode);
                 break;
             case 0x001E:
+                ch8_op_add_vx_to_I(cpu, opcode);
                 break;
             case 0x0029:
                 break;

@@ -366,3 +366,9 @@ void ch8_op_await_keypress(ch8_cpu *cpu, uint16_t opcode)
         cpu->V[vx] = (uint8_t) key;
     }
 }
+
+void ch8_op_add_vx_to_I(ch8_cpu *cpu, uint16_t opcode)
+{
+    uint16_t vx = (opcode & 0x0F00) >> 8;
+    cpu->I += cpu->V[vx];
+}
