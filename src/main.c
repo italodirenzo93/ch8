@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    ch8_load_rom(cpu, fontROM, SDL_arraysize(fontROM));
+    ch8_load_rom(cpu, fontROM, 16 * 5);
 
     /*if (!ch8_load_rom_file(cpu, "test_opcode.ch8"))
     {
@@ -71,13 +71,24 @@ int main(int argc, char *argv[])
     while (1)
     {
         display_event_loop(cpu);
+        
+        uint64_t start = SDL_GetPerformanceCounter();
+        
         display_clear();
-
-        if (cpu->running)
-        {
-            if (!ch8_exec_opcode(cpu)) exit(EXIT_FAILURE);
-        }
+        
+//        if (cpu->running)
+//        {
+//            if (!ch8_exec_opcode(cpu)) exit(EXIT_FAILURE);
+//        }
         
         display_present();
+        
+        uint64_t end = SDL_GetPerformanceCounter();
+        float elapsed_ms = (end - start) / (float) SDL_GetPerformanceFrequency() * 1000;
+        
+        SDL_Delay(floorf(16.666f - elapsed_ms));
+
+        cpu->delay_timer = SDL_max(0, cpu->delay_timer - 1);
+        cpu->sound_timer = SDL_max(0, cpu->sound_timer - 1);
     }
 }

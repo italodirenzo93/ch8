@@ -42,7 +42,7 @@ int display_init()
         return 1;
     }
     
-    display = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    display = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, CH8_DISPLAY_WIDTH, CH8_DISPLAY_HEIGHT);
     if (display == NULL)
     {
         log_error("Failed to create render target: %s\n", SDL_GetError());
@@ -118,18 +118,18 @@ void display_fb_copy(ch8_cpu *cpu)
 {
     INIT_CHECK();
     
-    SDL_Rect src;
+    SDL_Rect src = { 0 };
     src.x = 0;
     src.y = 0;
-    src.w = DISPLAY_WIDTH;
-    src.h = DISPLAY_HEIGHT;
+    src.w = CH8_DISPLAY_WIDTH;
+    src.h = CH8_DISPLAY_HEIGHT;
 
     SDL_Surface *surface = NULL;
     SDL_LockTextureToSurface(display, &src, &surface);
     SDL_memcpy(surface->pixels, &cpu->memory[cpu->I], (size_t)src.w * src.h);
     SDL_UnlockTexture(display);
 
-    SDL_Rect dest;
+    SDL_Rect dest = { 0 };
     dest.x = 0;
     dest.y = 0;
     dest.w = WINDOW_WIDTH;
