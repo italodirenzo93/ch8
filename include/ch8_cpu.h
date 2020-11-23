@@ -19,7 +19,8 @@
 
 #define PC_STEP_SIZE 2
 
-typedef uint16_t ch8_opcode_t;
+#define DISPLAY_WIDTH 64
+#define DISPLAY_HEIGHT 32
 
 typedef struct ch8_cpu
 {

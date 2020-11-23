@@ -70,7 +70,10 @@ void ch8_load_rom(ch8_cpu *cpu, const uint8_t *program, size_t size)
 {
     assert(cpu != NULL);
     assert(size <= CH8_MAX_PROGRAM_SIZE);
+    
+    memset(cpu->memory + CH8_PROGRAM_START_OFFSET, 0, CH8_MAX_PROGRAM_SIZE);
     memcpy(cpu->memory + CH8_PROGRAM_START_OFFSET, program, size);
+    
     log_debug("%d byte-long ROM binary loaded", size);
 }
 
@@ -99,6 +102,7 @@ bool ch8_load_rom_file(ch8_cpu *cpu, const char *file)
         return false;
     }
 
+    memset(cpu->memory + CH8_PROGRAM_START_OFFSET, 0, CH8_MAX_PROGRAM_SIZE);
     fread(cpu->memory + CH8_PROGRAM_START_OFFSET, sizeof(uint8_t), len, f);
 
     fclose(f);
@@ -144,11 +148,9 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
         case 0x00E0:
             ch8_op_display_clear(cpu);
             break;
-
         case 0x00EE:
             ch8_op_return(cpu);
             break;
-
         default:
             log_debug("Call machine code routine at address");
             break;

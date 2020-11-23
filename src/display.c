@@ -105,35 +105,35 @@ void display_clear()
 {
     INIT_CHECK();
     SDL_RenderClear(renderer);
-    log_debug("Render clear\n");
 }
 
-void draw_sprite(ch8_cpu *cpu, uint8_t x, uint8_t y, uint8_t h)
+void display_present()
 {
     INIT_CHECK();
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 1);
+    SDL_RenderPresent(renderer);
+}
 
-    SDL_Rect src = { 0 };
-    src.x = x;
-    src.y = y;
-    src.w = 8;
-    src.h = h + 1;
+void display_fb_copy(ch8_cpu *cpu)
+{
+    INIT_CHECK();
+    
+    SDL_Rect src;
+    src.x = 0;
+    src.y = 0;
+    src.w = DISPLAY_WIDTH;
+    src.h = DISPLAY_HEIGHT;
 
     SDL_Surface *surface = NULL;
     SDL_LockTextureToSurface(display, &src, &surface);
     SDL_memcpy(surface->pixels, &cpu->memory[cpu->I], (size_t)src.w * src.h);
     SDL_UnlockTexture(display);
 
-    SDL_Rect dest = { 0 };
-    dest.x = src.x = 0;
-    dest.y = src.y = 0;
-
-    src.w = DISPLAY_WIDTH;
-    src.h = DISPLAY_HEIGHT;
-
+    SDL_Rect dest;
+    dest.x = 0;
+    dest.y = 0;
     dest.w = WINDOW_WIDTH;
     dest.h = WINDOW_HEIGHT;
 
     SDL_RenderCopy(renderer, display, &src, &dest);
-
-    SDL_RenderPresent(renderer);
 }

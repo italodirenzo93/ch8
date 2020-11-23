@@ -67,7 +67,13 @@ void ch8_op_jumpto(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_display_clear(ch8_cpu *cpu)
 {
     log_debug("Clear display\n");
-    display_clear();
+    
+    int i;
+    for (i = 0; i < CH8_DISPLAY_SIZE; i++) {
+        cpu->display[i] = 0;
+    }
+    
+    display_fb_copy(cpu);
 }
 
 void ch8_op_callsub(ch8_cpu *cpu, uint16_t opcode)
@@ -266,7 +272,23 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
     uint8_t vx = (opcode & 0x0F00) >> 8;
     uint8_t vy = (opcode & 0x00F0) >> 4;
     uint8_t n = (opcode & 0x000F);
-    draw_sprite(cpu, vx, vy, n);
+    uint8_t startIdx = vy * DISPLAY_WIDTH + vx;
+    
+    uint8_t destX = vx + 8;
+    uint8_t destY = vy + n;
+    uint8_t destIdx = destY * DISPLAY_WIDTH + destX;
+    
+    int i, xor = 0;
+    for (i = startIdx; i < destIdx; i++) {
+        if (xor == 0) {
+            xor = cpu->display[i] ^ 1;
+        }
+        cpu->display[i] = 1;
+    }
+    
+    cpu->V[0xF] = xor;
+    
+    display_fb_copy(cpu);
 }
 
 void ch8_op_keyop_eq(ch8_cpu *cpu, uint16_t opcode)
