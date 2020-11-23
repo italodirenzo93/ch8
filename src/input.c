@@ -43,7 +43,7 @@ int await_keypress(ch8_cpu *cpu, input_key *key)
 {
     assert(cpu != NULL);
     
-    SDL_Event event;
+    SDL_Event event = { 0 };
     while (event.type != SDL_KEYDOWN) {
         if (SDL_WaitEvent(&event) != 1) {
             log_debug("Error awaiting keypress: %s", SDL_GetError());
