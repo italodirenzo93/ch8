@@ -53,6 +53,14 @@ int log_init()
     return 0;
 }
 
+void log_critical(const char* fmt, ...)
+{
+    va_list va;
+    va_start(va, fmt);
+    SDL_LogMessageV(LOG_CATEGORY, SDL_LOG_PRIORITY_CRITICAL, fmt, va);
+    va_end(va);
+}
+
 void log_error(const char* fmt, ...)
 {
     va_list va;

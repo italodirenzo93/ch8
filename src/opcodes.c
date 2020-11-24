@@ -277,6 +277,22 @@ void ch8_op_set_vx_to_delay_timer(ch8_cpu *cpu, uint16_t opcode)
     log_debug("TIMER set V[%d] = delay timer val %d", vx, cpu->delay_timer);
 }
 
+// 0xFX0A
+void ch8_op_await_keypress(ch8_cpu *cpu, uint16_t opcode)
+{
+    uint16_t vx = (opcode & 0x0F00) >> 8;
+ 
+    input_key key;
+    if (await_keypress(cpu, &key) != 0) {
+        log_error("Error awaiting keypress");
+        return;
+    }
+    
+    if (key != INPUT_KEY_UNKNOWN) {
+        cpu->V[vx] = (uint8_t) key;
+    }
+}
+
 // 0xFX15
 void ch8_op_set_delay_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
 {
@@ -295,24 +311,38 @@ void ch8_op_set_sound_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
     log_debug("SOUND set sound timer to V[%d] (%d)", vx, cpu->sound_timer);
 }
 
-// 0xFX0A
-void ch8_op_await_keypress(ch8_cpu *cpu, uint16_t opcode)
-{
-    uint16_t vx = (opcode & 0x0F00) >> 8;
- 
-    input_key key;
-    if (await_keypress(cpu, &key) != 0) {
-        log_error("Error awaiting keypress");
-        return;
-    }
-    
-    if (key != INPUT_KEY_UNKNOWN) {
-        cpu->V[vx] = (uint8_t) key;
-    }
-}
-
+// 0xFX1E
 void ch8_op_add_vx_to_I(ch8_cpu *cpu, uint16_t opcode)
 {
     uint16_t vx = (opcode & 0x0F00) >> 8;
     cpu->I += cpu->V[vx];
+}
+
+// 0xFX29
+void ch8_op_set_I_to_sprite_addr(ch8_cpu *cpu, uint16_t opcode)
+{
+    // TODO: This is probably wrong...
+    uint8_t vx = (opcode & 0x0F00) >> 8;
+    uint8_t ch = cpu->V[vx];
+    uint16_t i = ch * (4 * 5);
+    cpu->I = cpu->display[i];
+    log_debug("SET I = sprite_addr[%d] (%d * 4 * 5)", i, vx);
+}
+
+// 0xFX33
+void ch8_op_store_bcd_of_vx(ch8_cpu *cpu, uint16_t opcode)
+{
+    STUBBED("opcode FX33 store BCD");
+}
+
+// 0xFX55
+void ch8_op_store_v0_to_vx(ch8_cpu *cpu, uint16_t opcode)
+{
+    STUBBED("opcode FX55 store MEM");
+}
+
+// 0xFX65
+void ch8_op_fill_v0_to_vx(ch8_cpu *cpu, uint16_t opcode)
+{
+    STUBBED("opcode FX65 fill MEM");
 }
