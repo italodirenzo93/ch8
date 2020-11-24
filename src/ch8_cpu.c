@@ -272,12 +272,16 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
                 ch8_op_add_vx_to_I(cpu, opcode);
                 break;
             case 0x0029:
+                ch8_op_set_I_to_sprite_addr(cpu, opcode);
                 break;
             case 0x0033:
+                ch8_op_store_bcd_of_vx(cpu, opcode);
                 break;
             case 0x0055:
+                ch8_op_store_v0_to_vx(cpu, opcode);
                 break;
             case 0x0065:
+                ch8_op_fill_v0_to_vx(cpu, opcode);
                 break;
         }
         break;
