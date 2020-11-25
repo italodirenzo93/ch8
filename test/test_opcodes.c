@@ -4,6 +4,7 @@
 #include "opcodes.h"
 #include "display.h"
 #include "ch8_cpu.h"
+#include "input.h"
 
 // STUBS
 void display_clear()

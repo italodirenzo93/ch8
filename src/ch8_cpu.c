@@ -152,7 +152,7 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
             ch8_op_return(cpu);
             break;
         default:
-            log_debug("Call machine code routine at address");
+            log_debug("NOOP");
             break;
         }
         break;
