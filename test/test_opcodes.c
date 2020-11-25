@@ -29,12 +29,24 @@ void tearDown()
 {
 }
 
+static void return_from_subroutine_pushes_pc_onto_stack(void)
+{
+    const uint16_t addr = 0xE21F;
+    chip8.stack[8] = addr;
+    chip8.stack_pointer = 8;
+    
+    ch8_op_return(&chip8);
+    
+    TEST_ASSERT_EQUAL(addr, chip8.program_counter);
+    TEST_ASSERT_EQUAL(7, chip8.stack_pointer);
+}
+
 static void jumpto_sets_pc_to_address(void)
 {
     uint16_t opcode = 0x1323;
     uint16_t addr = opcode & 0x0FFF;
     ch8_op_jumpto(&chip8, opcode);
-    TEST_ASSERT_EQUAL(addr, chip8.PC);
+    TEST_ASSERT_EQUAL(addr, chip8.program_counter);
 }
 
 static void cond_eq_skips_next_instruction_if_equal(void)
@@ -42,11 +54,11 @@ static void cond_eq_skips_next_instruction_if_equal(void)
     uint16_t opcode = 0x2305;
     uint8_t vx = (opcode & 0x0F00) >> 8;
 
-    chip8.PC = 144;
+    chip8.program_counter = 144;
     chip8.V[vx] = 5;
 
     ch8_op_cond_eq(&chip8, opcode);
-    TEST_ASSERT_EQUAL(146, chip8.PC);
+    TEST_ASSERT_EQUAL(146, chip8.program_counter);
 }
 
 static void cond_eq_does_not_skip_next_instruction_if_unequal(void)
@@ -54,11 +66,11 @@ static void cond_eq_does_not_skip_next_instruction_if_unequal(void)
     uint16_t opcode = 0x23EE;
     uint8_t vx = (opcode & 0x0F00) >> 8;
 
-    chip8.PC = 144;
+    chip8.program_counter = 144;
     chip8.V[vx] = 5;
 
     ch8_op_cond_eq(&chip8, opcode);
-    TEST_ASSERT_EQUAL(144, chip8.PC);
+    TEST_ASSERT_EQUAL(144, chip8.program_counter);
 }
 
 static void cond_neq_skips_next_instruction_if_nequal(void)
@@ -66,11 +78,11 @@ static void cond_neq_skips_next_instruction_if_nequal(void)
     uint16_t opcode = 0x23FF;
     uint8_t vx = (opcode & 0x0F00) >> 8;
 
-    chip8.PC = 144;
+    chip8.program_counter = 144;
     chip8.V[vx] = 27;
 
     ch8_op_cond_neq(&chip8, opcode);
-    TEST_ASSERT_EQUAL(146, chip8.PC);
+    TEST_ASSERT_EQUAL(146, chip8.program_counter);
 }
 
 static void cond_neq_does_not_skip_next_instruction_if_equal(void)
@@ -78,11 +90,11 @@ static void cond_neq_does_not_skip_next_instruction_if_equal(void)
     uint16_t opcode = 0x23FF;
     uint8_t vx = (opcode & 0x0F00) >> 8;
 
-    chip8.PC = 144;
+    chip8.program_counter = 144;
     chip8.V[vx] = 255;
 
     ch8_op_cond_neq(&chip8, opcode);
-    TEST_ASSERT_EQUAL(144, chip8.PC);
+    TEST_ASSERT_EQUAL(144, chip8.program_counter);
 }
 
 static void cond_vx_eq_vy_skips_next_instruction_if_equal(void)
@@ -91,12 +103,12 @@ static void cond_vx_eq_vy_skips_next_instruction_if_equal(void)
     uint8_t vx = (opcode & 0x0F00) >> 8;
     uint8_t vy = (opcode & 0x00F0) >> 4;
 
-    chip8.PC = 144;
+    chip8.program_counter = 144;
     chip8.V[vx] = 255;
     chip8.V[vy] = 255;
 
     ch8_op_cond_vx_eq_vy(&chip8, opcode);
-    TEST_ASSERT_EQUAL(146, chip8.PC);
+    TEST_ASSERT_EQUAL(146, chip8.program_counter);
 }
 
 static void cond_vx_eq_vy_does_not_skip_next_instruction_if_unequal(void)
@@ -105,12 +117,12 @@ static void cond_vx_eq_vy_does_not_skip_next_instruction_if_unequal(void)
     uint8_t vx = (opcode & 0x0F00) >> 8;
     uint8_t vy = (opcode & 0x00F0) >> 4;
 
-    chip8.PC = 144;
+    chip8.program_counter = 144;
     chip8.V[vx] = 255;
     chip8.V[vy] = 254;
 
     ch8_op_cond_vx_eq_vy(&chip8, opcode);
-    TEST_ASSERT_EQUAL(144, chip8.PC);
+    TEST_ASSERT_EQUAL(144, chip8.program_counter);
 }
 
 static void const_set_sets_vx_to_value(void)
@@ -213,50 +225,50 @@ static void sub_vy_from_vx_sets_borrow_to_1_if_no_underflow(void)
 static void set_i_to_address(void)
 {
     ch8_op_set_addr(&chip8, 0xA3FF);
-    TEST_ASSERT_EQUAL(0x03FF, chip8.I);
+    TEST_ASSERT_EQUAL(0x03FF, chip8.index_register);
 }
 
 static void jump_to_addr_plus_v0(void)
 {
     chip8.V[0] = 0x04;
     ch8_jump_to_addr_plus_v0(&chip8, 0xB199);
-    TEST_ASSERT_EQUAL(413, chip8.PC);
+    TEST_ASSERT_EQUAL(413, chip8.program_counter);
 }
 
 // 0xEX9E
 static void key_down_skip_next_instruction(void)
 {
-    chip8.keypad[8] = CH8_KEYDOWN;
-    chip8.PC = 5;
+    chip8.keypad[8] = CH8_KEYSTATE_DOWN;
+    chip8.program_counter = 5;
     ch8_op_keyop_eq(&chip8, 0xE800);
-    TEST_ASSERT_EQUAL(7, chip8.PC);
+    TEST_ASSERT_EQUAL(7, chip8.program_counter);
 }
 
 static void key_down_does_not_skip_next_instruction(void)
 {
-    chip8.keypad[8] = CH8_KEYDOWN;
-    chip8.keypad[4] = CH8_KEYUP;
-    chip8.PC = 5;
+    chip8.keypad[8] = CH8_KEYSTATE_DOWN;
+    chip8.keypad[4] = CH8_KEYSTATE_UP;
+    chip8.program_counter = 5;
     ch8_op_keyop_eq(&chip8, 0xE400);
-    TEST_ASSERT_EQUAL(5, chip8.PC);
+    TEST_ASSERT_EQUAL(5, chip8.program_counter);
 }
 
 // 0xEXA1
 static void key_up_skip_next_instruction(void)
 {
-    chip8.keypad[8] = CH8_KEYDOWN;
-    chip8.PC = 5;
+    chip8.keypad[8] = CH8_KEYSTATE_DOWN;
+    chip8.program_counter = 5;
     ch8_op_keyop_neq(&chip8, 0xE800);
-    TEST_ASSERT_EQUAL(5, chip8.PC);
+    TEST_ASSERT_EQUAL(5, chip8.program_counter);
 }
 
 static void key_up_does_not_skip_next_instruction(void)
 {
-    chip8.keypad[9] = CH8_KEYDOWN;
-    chip8.keypad[4] = CH8_KEYUP;
-    chip8.PC = 5;
+    chip8.keypad[9] = CH8_KEYSTATE_DOWN;
+    chip8.keypad[4] = CH8_KEYSTATE_UP;
+    chip8.program_counter = 5;
     ch8_op_keyop_neq(&chip8, 0xE400);
-    TEST_ASSERT_EQUAL(7, chip8.PC);
+    TEST_ASSERT_EQUAL(7, chip8.program_counter);
 }
 
 int main()
@@ -264,6 +276,7 @@ int main()
     UnityBegin("test/test_opcodes.c");
 
     // 1NNN
+    RUN_TEST(return_from_subroutine_pushes_pc_onto_stack);
     RUN_TEST(jumpto_sets_pc_to_address);
 
     // 3XNN
@@ -305,10 +318,10 @@ int main()
     // 0xD000
 
     // 0xE000
-    RUN_TEST(key_down_skip_next_instruction);
-    RUN_TEST(key_down_does_not_skip_next_instruction);
-    RUN_TEST(key_up_skip_next_instruction);
-    RUN_TEST(key_up_does_not_skip_next_instruction);
+    //RUN_TEST(key_down_skip_next_instruction);
+    //RUN_TEST(key_down_does_not_skip_next_instruction);
+    //RUN_TEST(key_up_skip_next_instruction);
+    //RUN_TEST(key_up_does_not_skip_next_instruction);
 
     return UnityEnd();
 }

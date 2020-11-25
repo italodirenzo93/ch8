@@ -126,7 +126,7 @@ void display_fb_copy(ch8_cpu *cpu)
 
     SDL_Surface *surface = NULL;
     SDL_LockTextureToSurface(display, &src, &surface);
-    SDL_memcpy(surface->pixels, &cpu->memory[cpu->I], (size_t)src.w * src.h);
+    SDL_memcpy(surface->pixels, &cpu->memory[cpu->index_register], (size_t)src.w * src.h);
     SDL_UnlockTexture(display);
 
     SDL_Rect dest = { 0 };

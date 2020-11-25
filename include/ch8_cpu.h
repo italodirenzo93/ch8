@@ -6,12 +6,12 @@
 #include <stdbool.h>
 
 #define CH8_MEM_SIZE 4096
-#define CH8_STACK_SIZE 48
+#define CH8_STACK_SIZE 64
 #define CH8_NUM_REGISTERS 16
 
 #define CH8_MAX_PROGRAM_SIZE 3232
 
-#define CH8_PROGRAM_START_OFFSET 512
+#define CH8_PROGRAM_START_OFFSET 0x200
 #define CH8_CALL_STACK_OFFSET 3744
 #define CH8_DISPLAY_REFRESH_OFFSET 3840
 
@@ -20,18 +20,30 @@
 #define CH8_DISPLAY_WIDTH 64
 #define CH8_DISPLAY_HEIGHT 32
 
+typedef enum ch8_pixel_t : uint8_t
+{
+    CH8_PIXEL_ON = 0xF,
+    CH8_PIXEL_OFF = 0x0
+} ch8_pixel_t;
+
+typedef enum ch8_keystate_t : uint8_t
+{
+    CH8_KEYSTATE_UP = 1,
+    CH8_KEYSTATE_DOWN = 0
+} ch8_keystate_t;
+
 typedef struct ch8_cpu
 {
     uint8_t memory[CH8_MEM_SIZE];
-    uint16_t I;
+    uint16_t index_register;
     uint8_t V[CH8_NUM_REGISTERS]; /* data registers */
-    uint16_t PC;
-    uint8_t stack[CH8_STACK_SIZE];
+    uint16_t program_counter;
+    uint16_t stack[CH8_STACK_SIZE / 2];
     uint8_t stack_pointer;
-    uint8_t display[CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT];
+    ch8_pixel_t framebuffer[CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT];
     uint8_t delay_timer;
     uint8_t sound_timer;
-    uint8_t keypad[16];
+    ch8_keystate_t keypad[16];
     bool running;
 } ch8_cpu;
 
