@@ -29,10 +29,6 @@ int await_keypress(ch8_cpu* cpu, input_key* key)
     (*key) = INPUT_KEY_UP;
 }
 
-void display_fb_copy(ch8_cpu* cpu)
-{
-}
-
 bool is_key_up(ch8_cpu* cpu, input_key key)
 {
     return false;
@@ -41,4 +37,12 @@ bool is_key_up(ch8_cpu* cpu, input_key key)
 bool is_key_down(ch8_cpu* cpu, input_key key)
 {
     return false;
+}
+
+void display_write_fb_begin(ch8_cpu* cpu)
+{
+}
+
+void display_write_fb_end()
+{
 }
