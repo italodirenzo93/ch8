@@ -12,7 +12,7 @@ void ch8_op_return(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
     log_debug("Return from subroutine...\n");
-    
+
     cpu->program_counter = cpu->stack[cpu->stack_pointer];
     cpu->stack_pointer--;
 }
@@ -28,16 +28,18 @@ void ch8_op_jumpto(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_display_clear(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
-    
+
     log_debug("Clear display\n");
-    
+
+    display_write_fb_begin(cpu);
+
     int i;
     int length = CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT;
     for (i = 0; i < length; i++) {
         cpu->framebuffer[i] = CH8_PIXEL_OFF;
     }
-    
-    display_fb_copy(cpu);
+
+    display_write_fb_end();
 }
 
 void ch8_op_callsub(ch8_cpu *cpu, uint16_t opcode)
@@ -120,7 +122,7 @@ void ch8_op_const_add(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_assign(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
-    
+
     uint8_t vx = (opcode & 0x0F00) >> 8;
     uint8_t vy = (opcode & 0x00F0) >> 4;
 
@@ -131,7 +133,7 @@ void ch8_op_assign(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_or(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
-    
+
     uint8_t vx = (opcode & 0x0F00) >> 8;
     uint8_t vy = (opcode & 0x00F0) >> 4;
 
@@ -142,7 +144,7 @@ void ch8_op_or(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_and(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
-    
+
     uint8_t vx = (opcode & 0x0F00) >> 8;
     uint8_t vy = (opcode & 0x00F0) >> 4;
 
@@ -153,7 +155,7 @@ void ch8_op_and(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_xor(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
-    
+
     uint8_t vx = (opcode & 0x0F00) >> 8;
     uint8_t vy = (opcode & 0x00F0) >> 4;
 
@@ -164,7 +166,7 @@ void ch8_op_xor(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_add_vx_to_vy(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
-    
+
     uint8_t vx = (opcode & 0x0F00) >> 8;
     uint8_t vy = (opcode & 0x00F0) >> 4;
     uint16_t result = cpu->V[vx] + cpu->V[vy];
@@ -179,14 +181,14 @@ void ch8_op_add_vx_to_vy(ch8_cpu *cpu, uint16_t opcode)
         cpu->V[vx] = (uint8_t) result;
         cpu->V[0xF] = 0;
     }
-    
+
     log_debug("ADD V[%d] += V[%d] : V[0xF] = %d", vx, vy, cpu->V[0xF]);
 }
 
 void ch8_op_sub_vy_from_vx(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
-    
+
     uint8_t vx = (opcode & 0x0F00) >> 8;
     uint8_t vy = (opcode & 0x00F0) >> 4;
     uint16_t result = cpu->V[vx] - cpu->V[vy];
@@ -200,14 +202,14 @@ void ch8_op_sub_vy_from_vx(ch8_cpu *cpu, uint16_t opcode)
         cpu->V[vx] = (uint8_t) result;
         cpu->V[0xF] = 1;
     }
-    
+
     log_debug("SUB V[%d] -= V[%d] : V[0xF] = %d", vx, vy, cpu->V[0xF]);
 }
 
 void ch8_op_bitshift_right_vx_to_vf(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
-    
+
     uint8_t vx = (opcode & 0x0F00) >> 8;
     cpu->V[0xF] = cpu->V[vx] & 0x1;
     cpu->V[vx] >>= 1;
@@ -260,16 +262,18 @@ void ch8_op_bitwise_rand(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
-    
+
     uint8_t vx = (opcode & 0x0F00) >> 8;
     uint8_t vy = (opcode & 0x00F0) >> 4;
     uint8_t n = opcode & 0x000F;
     uint8_t startIdx = vy * CH8_DISPLAY_WIDTH + vx;
-    
+
     uint8_t destX = vx + 8;
     uint8_t destY = vy + n;
     uint8_t destIdx = destY * CH8_DISPLAY_WIDTH + destX;
-    
+
+    display_write_fb_begin(cpu);
+
     int i, xor = 0;
     for (i = startIdx; i < destIdx; i++) {
         if (xor == 0) {
@@ -277,10 +281,10 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
         }
         cpu->framebuffer[i] = CH8_PIXEL_ON;
     }
-    
+
     cpu->V[0xF] = xor != 0 ? 1 : 0;
-    
-    display_fb_copy(cpu);
+
+    display_write_fb_end();
 }
 
 void ch8_op_keyop_eq(ch8_cpu *cpu, uint16_t opcode)
@@ -316,15 +320,15 @@ void ch8_op_set_vx_to_delay_timer(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_await_keypress(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
-    
+
     uint16_t vx = (opcode & 0x0F00) >> 8;
- 
+
     input_key key;
     if (await_keypress(cpu, &key) != 0) {
         log_error("Error awaiting keypress");
         return;
     }
-    
+
     if (key != INPUT_KEY_UNKNOWN) {
         cpu->V[vx] = (uint8_t) key;
     }
@@ -334,10 +338,10 @@ void ch8_op_await_keypress(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_set_delay_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
-    
+
     uint16_t vx = (opcode & 0x0F00) >> 8;
     cpu->delay_timer = cpu->V[vx];
-    
+
     log_debug("TIMER set delay timer to V[%d] (%d)", vx, cpu->delay_timer);
 }
 
@@ -345,7 +349,7 @@ void ch8_op_set_delay_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_set_sound_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
-    
+
     uint16_t vx = (opcode & 0x0F00) >> 8;
     cpu->sound_timer = cpu->V[vx];
 

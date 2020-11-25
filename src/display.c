@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <SDL.h>
 
 #include "display.h"
@@ -34,14 +35,14 @@ int display_init()
         log_error("Failed to create window: %s\n", SDL_GetError());
         return 1;
     }
-    
+
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (renderer == NULL)
     {
         log_error("Failed to create renderer: %s\n", SDL_GetError());
         return 1;
     }
-    
+
     display = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, CH8_DISPLAY_WIDTH, CH8_DISPLAY_HEIGHT);
     if (display == NULL)
     {
@@ -50,7 +51,7 @@ int display_init()
     }
 
     initialized = true;
-    
+
     return 0;
 }
 
@@ -78,6 +79,8 @@ void display_quit()
 
 void display_event_loop(ch8_cpu *cpu)
 {
+    assert(cpu != NULL);
+
     while (SDL_PollEvent(&event))
     {
         switch (event.type)
@@ -114,22 +117,38 @@ void display_present()
     SDL_RenderPresent(renderer);
 }
 
-void display_fb_copy(ch8_cpu *cpu)
+void display_write_fb_begin(ch8_cpu *cpu)
 {
+    assert(cpu != NULL);
     INIT_CHECK();
-    
+
     SDL_Rect src = { 0 };
     src.x = 0;
     src.y = 0;
     src.w = CH8_DISPLAY_WIDTH;
     src.h = CH8_DISPLAY_HEIGHT;
 
-    SDL_Surface *surface = NULL;
-    SDL_LockTextureToSurface(display, &src, &surface);
-    SDL_memcpy(surface->pixels, &cpu->memory[cpu->index_register], (size_t)src.w * src.h);
+    int pitch = src.w * src.h;
+
+    int res = SDL_LockTexture(display, &src, (void**) &cpu->framebuffer, &pitch);
+    if (res == -1) {
+        log_error("Unable to lock GPU texture for write access");
+    }
+}
+
+void display_write_fb_end()
+{
+    INIT_CHECK();
+
     SDL_UnlockTexture(display);
 
-    SDL_Rect dest = { 0 };
+    SDL_Rect src, dest;
+
+    src.x = 0;
+    src.y = 0;
+    src.w = CH8_DISPLAY_WIDTH;
+    src.h = CH8_DISPLAY_HEIGHT;
+
     dest.x = 0;
     dest.y = 0;
     dest.w = WINDOW_WIDTH;
