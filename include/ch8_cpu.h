@@ -20,13 +20,13 @@
 #define CH8_DISPLAY_WIDTH 64
 #define CH8_DISPLAY_HEIGHT 32
 
-typedef enum ch8_pixel_t : uint8_t
+typedef enum ch8_pixel_t
 {
     CH8_PIXEL_ON = 0xF,
     CH8_PIXEL_OFF = 0x0
 } ch8_pixel_t;
 
-typedef enum ch8_keystate_t : uint8_t
+typedef enum ch8_keystate_t
 {
     CH8_KEYSTATE_UP = 1,
     CH8_KEYSTATE_DOWN = 0

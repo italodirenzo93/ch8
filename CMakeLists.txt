@@ -20,3 +20,6 @@ target_link_libraries(ch8 ${SDL2_LIBRARIES})
 
 # add test executable
 add_executable(test_opcodes ${HEADERS} "test/vendor/unity.c" "test/test_opcodes.c" "src/opcodes.c" "test/log.c")
+
+enable_testing()
+add_test(opcodes test_opcodes)

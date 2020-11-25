@@ -6,7 +6,7 @@
 
 struct ch8_cpu;
 
-typedef enum input_key : uint8_t
+typedef enum input_key
 {
     INPUT_KEY_UNKNOWN = 0xFF,
     INPUT_KEY_UP = 0x08,
