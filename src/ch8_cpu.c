@@ -53,10 +53,10 @@ void ch8_reset(ch8_cpu *cpu)
     memset(cpu->memory, 0, CH8_MEM_SIZE);
     memset(cpu->V, 0, CH8_NUM_REGISTERS);
     memset(cpu->stack, 0, CH8_STACK_SIZE);
-    memset(cpu->display, 0, CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT);
+    memset(cpu->framebuffer, 0, CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT);
 
-    cpu->I = 0;
-    cpu->PC = CH8_PROGRAM_START_OFFSET;
+    cpu->index_register = 0;
+    cpu->program_counter = CH8_PROGRAM_START_OFFSET;
     cpu->stack_pointer = 0;
     cpu->running = true;
 
@@ -114,8 +114,8 @@ uint16_t ch8_next_opcode(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
 
-    uint8_t msb = cpu->memory[cpu->PC];
-    uint8_t lsb = cpu->memory[cpu->PC + 1];
+    uint8_t msb = cpu->memory[cpu->program_counter];
+    uint8_t lsb = cpu->memory[cpu->program_counter + 1];
     uint16_t opcode = msb << 8 | lsb;
 
     return opcode;
@@ -292,7 +292,7 @@ bool ch8_exec_opcode(ch8_cpu *cpu)
     }
 
     // Advance the program counter 2 bytes at a time
-    cpu->PC += CH8_PC_STEP_SIZE;
+    cpu->program_counter += CH8_PC_STEP_SIZE;
 
     return true;
 }

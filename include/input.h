@@ -6,7 +6,7 @@
 
 struct ch8_cpu;
 
-typedef enum input_key
+typedef enum input_key : uint8_t
 {
     INPUT_KEY_UNKNOWN = 0xFF,
     INPUT_KEY_UP = 0x08,
@@ -14,9 +14,6 @@ typedef enum input_key
     INPUT_KEY_LEFT = 0x06,
     INPUT_KEY_RIGHT = 0x02
 } input_key;
-
-#define CH8_KEYDOWN 1
-#define CH8_KEYUP 0
 
 static inline input_key _scancode_to_key_register(SDL_Scancode scancode)
 {

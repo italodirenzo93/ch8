@@ -11,7 +11,7 @@ bool is_key_down(ch8_cpu *cpu, input_key key)
     if (key == INPUT_KEY_UNKNOWN) {
         return false;
     }
-    return cpu->keypad[key] == CH8_KEYDOWN;
+    return cpu->keypad[key] == CH8_KEYSTATE_DOWN;
 }
 
 bool is_key_up(ch8_cpu *cpu, input_key key)
@@ -20,14 +20,14 @@ bool is_key_up(ch8_cpu *cpu, input_key key)
     if (key == INPUT_KEY_UNKNOWN) {
         return false;
     }
-    return cpu->keypad[key] == CH8_KEYUP;
+    return cpu->keypad[key] == CH8_KEYSTATE_UP;
 }
 
 void set_key_down(ch8_cpu *cpu, input_key key)
 {
     assert(cpu != NULL);
     if (key != INPUT_KEY_UNKNOWN) {
-        cpu->keypad[key] = CH8_KEYDOWN;
+        cpu->keypad[key] = CH8_KEYSTATE_DOWN;
     }
 }
 
@@ -35,7 +35,7 @@ void set_key_up(ch8_cpu *cpu, input_key key)
 {
     assert(cpu != NULL);
     if (key != INPUT_KEY_UNKNOWN) {
-        cpu->keypad[key] = CH8_KEYDOWN;
+        cpu->keypad[key] = CH8_KEYSTATE_UP;
     }
 }
 
