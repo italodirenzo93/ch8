@@ -7,7 +7,7 @@
 
 ch8_cpu *cpu = NULL;
 
-//const uint8_t program[] = { 0x00, 0xE0 };
+static const uint8_t program[] = { 0x00, 0xE0 };
 // clang-format off
 static const uint8_t fontROM[] = {
   // 4x5 font sprites (0-F)
@@ -29,11 +29,10 @@ static const uint8_t fontROM[] = {
   0xF0, 0x80, 0xF0, 0x80, 0x80,
 };
 
-void cleanup(void)
+static void cleanup(void)
 {
     display_quit();
-    if (cpu != NULL)
-    {
+    if (cpu != NULL) {
         ch8_quit(&cpu);
         printf("Freed CHIP-8 VM.\n");
     }
@@ -43,48 +42,38 @@ int main(int argc, char *argv[])
 {
     atexit(cleanup);
     
-    if (log_init() != 0)
-    {
+    if (log_init() != 0) {
         printf("Could not initialize the logger\n");
         exit(EXIT_FAILURE);
     }
 
-    if (ch8_init(&cpu) != 0)
-    {
+    if (ch8_init(&cpu) != 0) {
         log_error("Failed to initialize CHIP-8 VM\n");
         exit(EXIT_FAILURE);
     }
     
-    if (display_init() != 0)
-    {
+    if (display_init() != 0) {
         log_error("Failed to initialize the display\n");
         exit(EXIT_FAILURE);
     }
 
-    ch8_load_rom(cpu, fontROM, 16 * 5);
+    ch8_load_rom(cpu, program, SDL_arraysize(program));
 
-    /*if (!ch8_load_rom_file(cpu, "test_opcode.ch8"))
-    {
+    /*if (!ch8_load_rom_file(cpu, "test_opcode.ch8")) {
         exit(EXIT_FAILURE);
     }*/
 
-    while (1)
-    {
+    while (1) {
         display_event_loop(cpu);
         
-        uint64_t start = SDL_GetPerformanceCounter();
+        const uint64_t start = SDL_GetPerformanceCounter();
         
-        display_clear();
+        if (cpu->running) {
+            cpu->running = ch8_exec_opcode(cpu);
+        }
         
-//        if (cpu->running)
-//        {
-//            if (!ch8_exec_opcode(cpu)) exit(EXIT_FAILURE);
-//        }
-        
-        display_present();
-        
-        uint64_t end = SDL_GetPerformanceCounter();
-        float elapsed_ms = (end - start) / (float) SDL_GetPerformanceFrequency() * 1000;
+        const uint64_t end = SDL_GetPerformanceCounter();
+        const float elapsed_ms = (float) (end - start) / (float) SDL_GetPerformanceFrequency() * 1000;
         
         SDL_Delay(floorf(16.666f - elapsed_ms));
 

@@ -39,10 +39,6 @@ bool is_key_down(ch8_cpu* cpu, input_key key)
     return false;
 }
 
-void display_write_fb_begin(ch8_cpu* cpu)
-{
-}
-
-void display_write_fb_end()
+void display_write_fb()
 {
 }

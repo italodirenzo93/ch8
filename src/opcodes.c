@@ -31,15 +31,13 @@ void ch8_op_display_clear(ch8_cpu *cpu)
 
     log_debug("Clear display\n");
 
-    display_write_fb_begin(cpu);
-
     int i;
     int length = CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT;
     for (i = 0; i < length; i++) {
         cpu->framebuffer[i] = CH8_PIXEL_OFF;
     }
 
-    display_write_fb_end();
+    display_write_fb(cpu);
 }
 
 void ch8_op_callsub(ch8_cpu *cpu, uint16_t opcode)
@@ -272,8 +270,6 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
     uint8_t destY = vy + n;
     uint8_t destIdx = destY * CH8_DISPLAY_WIDTH + destX;
 
-    display_write_fb_begin(cpu);
-
     int i, xor = 0;
     for (i = startIdx; i < destIdx; i++) {
         if (xor == 0) {
@@ -284,7 +280,7 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
 
     cpu->V[0xF] = xor != 0 ? 1 : 0;
 
-    display_write_fb_end();
+    display_write_fb(cpu);
 }
 
 void ch8_op_keyop_eq(ch8_cpu *cpu, uint16_t opcode)
