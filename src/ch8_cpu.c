@@ -53,7 +53,8 @@ void ch8_reset(ch8_cpu *cpu)
     memset(cpu->memory, 0, CH8_MEM_SIZE);
     memset(cpu->V, 0, CH8_NUM_REGISTERS);
     memset(cpu->stack, 0, CH8_STACK_SIZE);
-    memset(cpu->framebuffer, 0, CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT);
+    memset(cpu->framebuffer, CH8_PIXEL_OFF, CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT);
+    memset(cpu->keypad, CH8_KEYSTATE_UP, CH8_NUM_KEYS);
 
     cpu->index_register = 0;
     cpu->program_counter = CH8_PROGRAM_START_OFFSET;

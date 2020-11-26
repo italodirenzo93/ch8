@@ -6,12 +6,13 @@
 #include "log.h"
 #include "input.h"
 
-SDL_Window *window = NULL;
-SDL_Renderer *renderer = NULL;
-SDL_Texture *display = NULL;
+static SDL_Window *window = NULL;
+static SDL_Renderer *renderer = NULL;
+static SDL_Texture *display = NULL;
+static SDL_PixelFormat *pixelFormat = NULL;
 
-SDL_Event event;
-bool initialized = false;
+static SDL_Event event;
+static bool initialized = false;
 
 #define INIT_CHECK() if (!initialized) return
 
@@ -36,7 +37,7 @@ int display_init()
         return 1;
     }
 
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (renderer == NULL)
     {
         log_error("Failed to create renderer: %s\n", SDL_GetError());
@@ -50,6 +51,12 @@ int display_init()
         return 1;
     }
 
+    pixelFormat = SDL_AllocFormat(SDL_PIXELFORMAT_RGB888);
+    if (pixelFormat == NULL) {
+        log_error("Failed to allocate pixel format: %s", SDL_GetError());
+        return 1;
+    }
+
     initialized = true;
 
     return 0;
@@ -58,6 +65,10 @@ int display_init()
 void display_quit()
 {
     INIT_CHECK();
+
+    SDL_FreeFormat(pixelFormat);
+    pixelFormat = NULL;
+    log_debug("Pixel format freed");
 
     SDL_DestroyTexture(display);
     display = NULL;
@@ -90,13 +101,13 @@ void display_event_loop(ch8_cpu *cpu)
             break;
         case SDL_KEYDOWN:
         {
-            input_key key = _scancode_to_key_register(event.key.keysym.scancode);
+            const input_key key = _scancode_to_key_register(event.key.keysym.scancode);
             set_key_down(cpu, key);
             break;
         }
         case SDL_KEYUP:
         {
-            input_key key = _scancode_to_key_register(event.key.keysym.scancode);
+            const input_key key = _scancode_to_key_register(event.key.keysym.scancode);
             set_key_up(cpu, key);
             break;
         }
@@ -104,55 +115,27 @@ void display_event_loop(ch8_cpu *cpu)
     }
 }
 
-void display_clear()
+void display_write_fb(const ch8_cpu *cpu)
 {
     INIT_CHECK();
-    SDL_RenderClear(renderer);
-}
 
-void display_present()
-{
-    INIT_CHECK();
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 1);
-    SDL_RenderPresent(renderer);
-}
+    uint8_t *pixels = NULL;
+    int x, y, pitch;
+    SDL_LockTexture(display, NULL, (void**) &pixels, &pitch);
 
-void display_write_fb_begin(ch8_cpu *cpu)
-{
-    assert(cpu != NULL);
-    INIT_CHECK();
-
-    SDL_Rect src = { 0 };
-    src.x = 0;
-    src.y = 0;
-    src.w = CH8_DISPLAY_WIDTH;
-    src.h = CH8_DISPLAY_HEIGHT;
-
-    int pitch = src.w * src.h;
-
-    int res = SDL_LockTexture(display, &src, (void**) &cpu->framebuffer, &pitch);
-    if (res == -1) {
-        log_error("Unable to lock GPU texture for write access");
+    for (y = 0; y < CH8_DISPLAY_HEIGHT; y++) {
+        uint32_t *p = (uint32_t*) (pixels + pitch * y);
+        for (x = 0; x < CH8_DISPLAY_WIDTH; x++) {
+            const uint16_t i = x + CH8_DISPLAY_WIDTH * y;
+            const uint8_t color = cpu->framebuffer[i] > 0 ? 255 : 0;
+            (*p) = SDL_MapRGB(pixelFormat, color, color, color);
+            p++;
+        }
     }
-}
-
-void display_write_fb_end()
-{
-    INIT_CHECK();
 
     SDL_UnlockTexture(display);
 
-    SDL_Rect src, dest;
-
-    src.x = 0;
-    src.y = 0;
-    src.w = CH8_DISPLAY_WIDTH;
-    src.h = CH8_DISPLAY_HEIGHT;
-
-    dest.x = 0;
-    dest.y = 0;
-    dest.w = WINDOW_WIDTH;
-    dest.h = WINDOW_HEIGHT;
-
-    SDL_RenderCopy(renderer, display, &src, &dest);
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, display, NULL, NULL);
+    SDL_RenderPresent(renderer);
 }

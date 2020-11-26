@@ -9,6 +9,7 @@
 #define CH8_STACK_SIZE 64
 #define CH8_NUM_REGISTERS 16
 #define CH8_MAX_PROGRAM_SIZE 3232
+#define CH8_NUM_KEYS 16
 
 #define CH8_PROGRAM_START_OFFSET 0x200
 #define CH8_CALL_STACK_OFFSET 3744
@@ -21,14 +22,14 @@
 
 typedef enum ch8_pixel_t
 {
-    CH8_PIXEL_ON = 0xF,
-    CH8_PIXEL_OFF = 0x0
+    CH8_PIXEL_ON = 1,
+    CH8_PIXEL_OFF = 0
 } ch8_pixel_t;
 
 typedef enum ch8_keystate_t
 {
-    CH8_KEYSTATE_UP = 1,
-    CH8_KEYSTATE_DOWN = 0
+    CH8_KEYSTATE_UP = 0,
+    CH8_KEYSTATE_DOWN = 1
 } ch8_keystate_t;
 
 typedef struct ch8_cpu
@@ -42,7 +43,7 @@ typedef struct ch8_cpu
     ch8_pixel_t framebuffer[CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT];
     uint8_t delay_timer;
     uint8_t sound_timer;
-    ch8_keystate_t keypad[16];
+    ch8_keystate_t keypad[CH8_NUM_KEYS];
     bool running;
 } ch8_cpu;
 
