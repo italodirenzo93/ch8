@@ -14,8 +14,8 @@ endif()
 include_directories(${SDL2_INCLUDE_DIRS} include)
 
 # add the executable
-set(HEADERS "include/ch8_cpu.h" "include/display.h" "include/opcodes.h" "include/log.h" "include/input.h")
-add_executable(ch8 ${HEADERS} "src/main.c" "src/ch8_cpu.c" "src/opcodes.c" "src/display.c" "src/log.c" "src/input.c")
+set(HEADERS "include/ch8_cpu.h" "include/display.h" "include/opcodes.h" "include/log.h" "include/input.h" "include/chip8.hpp")
+add_executable(ch8 ${HEADERS} "src/main.c" "src/ch8_cpu.c" "src/opcodes.c" "src/display.c" "src/log.c" "src/input.c" "src/chip8.cpp")
 target_link_libraries(ch8 ${SDL2_LIBRARIES})
 
 # add test executable
