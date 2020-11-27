@@ -271,6 +271,48 @@ static void key_up_does_not_skip_next_instruction(void)
     TEST_ASSERT_EQUAL(7, chip8.program_counter);
 }
 
+static void test_store_V0_to_Vx(void)
+{
+    const uint16_t opcode = 0xF455;
+    const uint16_t start_addr = 2078; /* random memory offset */
+
+    chip8.index_register = start_addr;
+    chip8.V[0] = 5;
+    chip8.V[1] = 4;
+    chip8.V[2] = 22;
+    chip8.V[3] = 144;
+
+    ch8_op_store_v0_to_vx(&chip8, opcode);
+
+    TEST_ASSERT_EQUAL(5, chip8.memory[start_addr]);
+    TEST_ASSERT_EQUAL(4, chip8.memory[start_addr + 1]);
+    TEST_ASSERT_EQUAL(22, chip8.memory[start_addr + 2]);
+    TEST_ASSERT_EQUAL(144, chip8.memory[start_addr + 3]);
+
+    TEST_ASSERT_EQUAL(2083, chip8.index_register); /* I = I + x + 1 */
+}
+
+static void test_fill_V0_to_Vx(void)
+{
+    const uint16_t opcode = 0xF465;
+    const uint16_t start_addr = 2078; /* random memory offset */
+
+    chip8.index_register = start_addr;
+    chip8.memory[start_addr] = 5;
+    chip8.memory[start_addr + 1] = 4;
+    chip8.memory[start_addr + 2] = 22;
+    chip8.memory[start_addr + 3] = 144;
+
+    ch8_op_fill_v0_to_vx(&chip8, opcode);
+
+    TEST_ASSERT_EQUAL(5, chip8.V[0]);
+    TEST_ASSERT_EQUAL(4, chip8.V[1]);
+    TEST_ASSERT_EQUAL(22, chip8.V[2]);
+    TEST_ASSERT_EQUAL(144, chip8.V[3]);
+
+    TEST_ASSERT_EQUAL(2083, chip8.index_register); /* I = I + x + 1 */
+}
+
 int main()
 {
     UnityBegin("test/test_opcodes.c");
@@ -322,6 +364,10 @@ int main()
     //RUN_TEST(key_down_does_not_skip_next_instruction);
     //RUN_TEST(key_up_skip_next_instruction);
     //RUN_TEST(key_up_does_not_skip_next_instruction);
+
+    // 0xF000
+    RUN_TEST(test_store_V0_to_Vx);
+    RUN_TEST(test_fill_V0_to_Vx);
 
     return UnityEnd();
 }

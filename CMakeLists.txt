@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
 # set the project name
-project(ch8)
+project(ch8 C)
+set(CMAKE_C_STANDARD 11)
 
 # SDL2
 if (WIN32)

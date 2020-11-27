@@ -21,26 +21,26 @@ int ch8_init(ch8_cpu **pcpu)
         log_debug("CHIP-8 VM allocation failed\n");
         return 1;
     }
-    
+
     memset(cpu, 0, sizeof(ch8_cpu));
     ch8_reset(cpu);
 
     (*pcpu) = cpu;
-    
+
     srand((unsigned int)time(NULL));
-    
+
     return 0;
 }
 
 void ch8_quit(ch8_cpu **pcpu)
 {
     assert(pcpu != NULL);
-    
+
     ch8_cpu *cpu = *pcpu;
     if (cpu != NULL)
     {
         cpu->running = false;
-        
+
         free(cpu);
         cpu = NULL;
     }
@@ -49,7 +49,7 @@ void ch8_quit(ch8_cpu **pcpu)
 void ch8_reset(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
-    
+
     memset(cpu->memory, 0, CH8_MEM_SIZE);
     memset(cpu->V, 0, CH8_NUM_REGISTERS);
     memset(cpu->stack, 0, CH8_STACK_SIZE);
@@ -71,10 +71,10 @@ void ch8_load_rom(ch8_cpu *cpu, const uint8_t *program, size_t size)
 {
     assert(cpu != NULL);
     assert(size <= CH8_MAX_PROGRAM_SIZE);
-    
+
     memset(cpu->memory + CH8_PROGRAM_START_OFFSET, 0, CH8_MAX_PROGRAM_SIZE);
     memcpy(cpu->memory + CH8_PROGRAM_START_OFFSET, program, size);
-    
+
     log_debug("%d byte-long ROM binary loaded", size);
 }
 
@@ -82,7 +82,7 @@ bool ch8_load_rom_file(ch8_cpu *cpu, const char *file)
 {
     assert(cpu != NULL);
     assert(strlen(file) != 0);
-    
+
     log_debug("Loading ROM file %s...", file);
 
     size_t len = 0;
