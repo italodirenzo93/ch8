@@ -57,11 +57,12 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    ch8_load_rom(cpu, program, SDL_arraysize(program));
+    //ch8_load_rom(cpu, program, SDL_arraysize(program));
 
-    /*if (!ch8_load_rom_file(cpu, "test_opcode.ch8")) {
+    if (!ch8_load_rom_file(cpu, "test_opcode.ch8")) {
+        log_critical("Could not load ROM");
         exit(EXIT_FAILURE);
-    }*/
+    }
 
     while (1) {
         display_event_loop(cpu);
