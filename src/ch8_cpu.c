@@ -15,7 +15,7 @@ int ch8_init(ch8_cpu **pcpu)
 {
     assert(pcpu != NULL);
 
-    ch8_cpu *cpu = (ch8_cpu *)malloc(sizeof(ch8_cpu));
+    ch8_cpu *cpu = malloc(sizeof(ch8_cpu));
     if (cpu == NULL)
     {
         log_debug("CHIP-8 VM allocation failed\n");
@@ -122,7 +122,7 @@ uint16_t ch8_next_opcode(ch8_cpu *cpu)
     return opcode;
 }
 
-bool ch8_exec_opcode(ch8_cpu *cpu)
+bool ch8_clock_cycle(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
 
