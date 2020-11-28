@@ -271,9 +271,22 @@ static void key_up_does_not_skip_next_instruction(void)
     TEST_ASSERT_EQUAL(7, chip8.program_counter);
 }
 
+// 0xFX33
+static void test_store_bcd_of_vx_at_i(void)
+{
+    chip8.V[3] = 255;
+    chip8.index_register = 764;
+
+    ch8_op_store_bcd_of_vx(&chip8, 0xF333);
+
+    TEST_ASSERT_EQUAL(2, chip8.memory[chip8.index_register]);
+    TEST_ASSERT_EQUAL(5, chip8.memory[chip8.index_register + 1]);
+    TEST_ASSERT_EQUAL(5, chip8.memory[chip8.index_register + 2]);
+}
+
+// 0xFX55
 static void test_store_V0_to_Vx(void)
 {
-    const uint16_t opcode = 0xF455;
     const uint16_t start_addr = 2078; /* random memory offset */
 
     chip8.index_register = start_addr;
@@ -282,7 +295,7 @@ static void test_store_V0_to_Vx(void)
     chip8.V[2] = 22;
     chip8.V[3] = 144;
 
-    ch8_op_store_v0_to_vx(&chip8, opcode);
+    ch8_op_store_v0_to_vx(&chip8, 0xF455);
 
     TEST_ASSERT_EQUAL(5, chip8.memory[start_addr]);
     TEST_ASSERT_EQUAL(4, chip8.memory[start_addr + 1]);
@@ -292,9 +305,9 @@ static void test_store_V0_to_Vx(void)
     TEST_ASSERT_EQUAL(2083, chip8.index_register); /* I = I + x + 1 */
 }
 
+// 0xFX65
 static void test_fill_V0_to_Vx(void)
 {
-    const uint16_t opcode = 0xF465;
     const uint16_t start_addr = 2078; /* random memory offset */
 
     chip8.index_register = start_addr;
@@ -303,7 +316,7 @@ static void test_fill_V0_to_Vx(void)
     chip8.memory[start_addr + 2] = 22;
     chip8.memory[start_addr + 3] = 144;
 
-    ch8_op_fill_v0_to_vx(&chip8, opcode);
+    ch8_op_fill_v0_to_vx(&chip8, 0xF465);
 
     TEST_ASSERT_EQUAL(5, chip8.V[0]);
     TEST_ASSERT_EQUAL(4, chip8.V[1]);
@@ -366,6 +379,7 @@ int main()
     //RUN_TEST(key_up_does_not_skip_next_instruction);
 
     // 0xF000
+    RUN_TEST(test_store_bcd_of_vx_at_i);
     RUN_TEST(test_store_V0_to_Vx);
     RUN_TEST(test_fill_V0_to_Vx);
 
