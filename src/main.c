@@ -68,17 +68,21 @@ int main(int argc, char *argv[])
         display_event_loop(cpu);
         
         const uint64_t start = SDL_GetPerformanceCounter();
-        
+
         if (cpu->running) {
-            cpu->running = ch8_exec_opcode(cpu);
+            display_clear();
+            cpu->running = ch8_clock_cycle(cpu);
+            display_present(cpu);
         }
-        
+
         const uint64_t end = SDL_GetPerformanceCounter();
         const float elapsed_ms = (float) (end - start) / (float) SDL_GetPerformanceFrequency() * 1000;
         
-        SDL_Delay(floorf(16.666f - elapsed_ms));
+        SDL_Delay((Uint32) floorf(16.666f - elapsed_ms));
 
-        cpu->delay_timer = SDL_max(0, cpu->delay_timer - 1);
-        cpu->sound_timer = SDL_max(0, cpu->sound_timer - 1);
+        if (cpu->running) {
+            cpu->delay_timer = SDL_max(0, cpu->delay_timer - 1);
+            cpu->sound_timer = SDL_max(0, cpu->sound_timer - 1);
+        }
     }
 }
