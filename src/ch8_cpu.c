@@ -10,56 +10,44 @@
 #include "ch8_cpu.h"
 #include "opcodes.h"
 #include "log.h"
-
-int ch8_init(ch8_cpu **pcpu)
-{
-    assert(pcpu != NULL);
-
-    ch8_cpu *cpu = malloc(sizeof(ch8_cpu));
-    if (cpu == NULL)
-    {
-        log_debug("CHIP-8 VM allocation failed\n");
-        return 1;
-    }
-
-    memset(cpu, 0, sizeof(ch8_cpu));
-    ch8_reset(cpu);
-
-    (*pcpu) = cpu;
-
-    srand((unsigned int)time(NULL));
-
-    return 0;
-}
-
-void ch8_quit(ch8_cpu **pcpu)
-{
-    assert(pcpu != NULL);
-
-    ch8_cpu *cpu = *pcpu;
-    if (cpu != NULL)
-    {
-        cpu->running = false;
-
-        free(cpu);
-        cpu = NULL;
-    }
-}
+#include "util.h"
 
 void ch8_reset(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
 
-    memset(cpu->memory, 0, CH8_MEM_SIZE);
-    memset(cpu->V, 0, CH8_NUM_REGISTERS);
-    memset(cpu->stack, 0, CH8_STACK_SIZE);
-    memset(cpu->framebuffer, CH8_PIXEL_OFF, CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT);
-    memset(cpu->keypad, CH8_KEYSTATE_UP, CH8_NUM_KEYS);
+    int i;
+
+    // Memory
+    for (i = 0; i < CH8_MEM_SIZE; i++) {
+        cpu->memory[i] = 0;
+    }
+
+    // Data registers
+    for (i = 0; i < CH8_NUM_REGISTERS; i++) {
+        cpu->V[i] = 0;
+    }
+
+    // Stack
+    for (i = 0; i < CH8_STACK_SIZE; i++) {
+        cpu->stack[i] = 0;
+    }
+
+    // Framebuffer
+    const int display_size = CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT;
+    for (i = 0; i < display_size; i++) {
+        cpu->framebuffer[i] = CH8_PIXEL_OFF;
+    }
+
+    // Keypad
+    for (i = 0; i < CH8_NUM_KEYS; i++) {
+        cpu->keypad[i] = CH8_KEYSTATE_DOWN;
+    }
 
     cpu->index_register = 0;
     cpu->program_counter = CH8_PROGRAM_START_OFFSET;
     cpu->stack_pointer = 0;
-    cpu->running = true;
+    cpu->running = false;
 
     cpu->delay_timer = 0;
     cpu->sound_timer = 0;
@@ -132,7 +120,7 @@ bool ch8_clock_cycle(ch8_cpu *cpu)
         return false;
     }
 
-    uint16_t opcode = ch8_next_opcode(cpu);
+    const uint16_t opcode = ch8_next_opcode(cpu);
     if (opcode == 0)
     {
         cpu->running = false;
@@ -296,4 +284,19 @@ bool ch8_clock_cycle(ch8_cpu *cpu)
     cpu->program_counter += CH8_PC_STEP_SIZE;
 
     return true;
+}
+
+static float timer_val = 0.0f;
+void ch8_update_timers(ch8_cpu *cpu, float elapsed)
+{
+    assert(cpu != NULL);
+    
+    timer_val += elapsed;
+
+    if (timer_val >= 16.666f) {
+        cpu->delay_timer = ch8_max(0, cpu->delay_timer - 1);
+        cpu->sound_timer = ch8_max(0, cpu->sound_timer - 1);
+
+        timer_val = 0.0f;
+    }
 }

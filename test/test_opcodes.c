@@ -1,5 +1,3 @@
-#include <string.h>
-
 #include "vendor/unity.h"
 #include "opcodes.h"
 #include "display.h"
@@ -22,7 +20,7 @@ ch8_cpu chip8;
 
 void setUp()
 {
-    memset(&chip8, 0, sizeof(ch8_cpu));
+    ch8_reset(&chip8);
 }
 
 void tearDown()
@@ -43,16 +41,16 @@ static void return_from_subroutine_pushes_pc_onto_stack(void)
 
 static void jumpto_sets_pc_to_address(void)
 {
-    uint16_t opcode = 0x1323;
-    uint16_t addr = opcode & 0x0FFF;
+    const uint16_t opcode = 0x1323;
+    const uint16_t addr = opcode & 0x0FFF;
     ch8_op_jumpto(&chip8, opcode);
     TEST_ASSERT_EQUAL(addr, chip8.program_counter);
 }
 
 static void cond_eq_skips_next_instruction_if_equal(void)
 {
-    uint16_t opcode = 0x2305;
-    uint8_t vx = (opcode & 0x0F00) >> 8;
+    const uint16_t opcode = 0x2305;
+    const uint8_t vx = (opcode & 0x0F00) >> 8;
 
     chip8.program_counter = 144;
     chip8.V[vx] = 5;
@@ -63,8 +61,8 @@ static void cond_eq_skips_next_instruction_if_equal(void)
 
 static void cond_eq_does_not_skip_next_instruction_if_unequal(void)
 {
-    uint16_t opcode = 0x23EE;
-    uint8_t vx = (opcode & 0x0F00) >> 8;
+    const uint16_t opcode = 0x23EE;
+    const uint8_t vx = (opcode & 0x0F00) >> 8;
 
     chip8.program_counter = 144;
     chip8.V[vx] = 5;
@@ -75,8 +73,8 @@ static void cond_eq_does_not_skip_next_instruction_if_unequal(void)
 
 static void cond_neq_skips_next_instruction_if_nequal(void)
 {
-    uint16_t opcode = 0x23FF;
-    uint8_t vx = (opcode & 0x0F00) >> 8;
+    const uint16_t opcode = 0x23FF;
+    const uint8_t vx = (opcode & 0x0F00) >> 8;
 
     chip8.program_counter = 144;
     chip8.V[vx] = 27;
@@ -87,8 +85,8 @@ static void cond_neq_skips_next_instruction_if_nequal(void)
 
 static void cond_neq_does_not_skip_next_instruction_if_equal(void)
 {
-    uint16_t opcode = 0x23FF;
-    uint8_t vx = (opcode & 0x0F00) >> 8;
+    const uint16_t opcode = 0x23FF;
+    const uint8_t vx = (opcode & 0x0F00) >> 8;
 
     chip8.program_counter = 144;
     chip8.V[vx] = 255;
@@ -99,9 +97,9 @@ static void cond_neq_does_not_skip_next_instruction_if_equal(void)
 
 static void cond_vx_eq_vy_skips_next_instruction_if_equal(void)
 {
-    uint16_t opcode = 0x23FF;
-    uint8_t vx = (opcode & 0x0F00) >> 8;
-    uint8_t vy = (opcode & 0x00F0) >> 4;
+    const uint16_t opcode = 0x23FF;
+    const uint8_t vx = (opcode & 0x0F00) >> 8;
+    const uint8_t vy = (opcode & 0x00F0) >> 4;
 
     chip8.program_counter = 144;
     chip8.V[vx] = 255;
@@ -113,9 +111,9 @@ static void cond_vx_eq_vy_skips_next_instruction_if_equal(void)
 
 static void cond_vx_eq_vy_does_not_skip_next_instruction_if_unequal(void)
 {
-    uint16_t opcode = 0x23FF;
-    uint8_t vx = (opcode & 0x0F00) >> 8;
-    uint8_t vy = (opcode & 0x00F0) >> 4;
+    const uint16_t opcode = 0x23FF;
+    const uint8_t vx = (opcode & 0x0F00) >> 8;
+    const uint8_t vy = (opcode & 0x00F0) >> 4;
 
     chip8.program_counter = 144;
     chip8.V[vx] = 255;
@@ -127,14 +125,14 @@ static void cond_vx_eq_vy_does_not_skip_next_instruction_if_unequal(void)
 
 static void const_set_sets_vx_to_value(void)
 {
-    uint16_t opcode = 0x670C;
+    const uint16_t opcode = 0x670C;
     ch8_op_const_set(&chip8, opcode);
     TEST_ASSERT_EQUAL(12, chip8.V[7]);
 }
 
 static void const_add_adds_value_to_vx(void)
 {
-    uint16_t opcode = 0x780C;
+    const uint16_t opcode = 0x780C;
     chip8.V[8] = 4;
     ch8_op_const_add(&chip8, opcode);
     TEST_ASSERT_EQUAL(16, chip8.V[8]);
@@ -181,7 +179,7 @@ static void add_vx_to_vy_sets_carry_to_1_if_overflow(void)
 
     ch8_op_add_vx_to_vy(&chip8, 0x8014);
 
-    TEST_ASSERT_EQUAL(255, chip8.V[0]);
+    TEST_ASSERT_EQUAL(44, chip8.V[0]);  // should overflow
     TEST_ASSERT_EQUAL(1, chip8.V[0xF]);
 }
 
@@ -193,7 +191,7 @@ static void add_vx_to_vy_sets_carry_to_0_if_no_overflow(void)
 
     ch8_op_add_vx_to_vy(&chip8, 0x8014);
 
-    TEST_ASSERT_EQUAL(100, chip8.V[0]);
+    TEST_ASSERT_EQUAL(100, chip8.V[0]); // no overflow
     TEST_ASSERT_EQUAL(0, chip8.V[0xF]);
 }
 
@@ -206,7 +204,7 @@ static void sub_vy_from_vx_sets_borrow_to_0_if_underflow(void)
 
     ch8_op_sub_vy_from_vx(&chip8, 0x8015);
 
-    TEST_ASSERT_EQUAL(0, chip8.V[0]);
+    TEST_ASSERT_EQUAL(255, chip8.V[0]); // should underflow
     TEST_ASSERT_EQUAL(0, chip8.V[0xF]);
 }
 

@@ -4,6 +4,7 @@
 #include "ch8_cpu.h"
 #include "display.h"
 #include "log.h"
+#include "util.h"
 
 ch8_cpu *cpu = NULL;
 
@@ -32,41 +33,43 @@ static const uint8_t fontROM[] = {
 static void cleanup(void)
 {
     display_quit();
-    if (cpu != NULL) {
-        ch8_quit(&cpu);
-        printf("Freed CHIP-8 VM.\n");
-    }
+    ch8_free((void**)&cpu);
+    printf("Freed CHIP-8 VM.\n");
 }
 
 int main(int argc, char *argv[])
 {
     atexit(cleanup);
-    
+
+    // Allocate VM
+    cpu = ch8_malloc(sizeof(ch8_cpu));
+
+    // Initialize VM
+    ch8_reset(cpu);
+
+    // Initialize sub-systems
     if (log_init() != 0) {
         printf("Could not initialize the logger\n");
         exit(EXIT_FAILURE);
     }
 
-    if (ch8_init(&cpu) != 0) {
-        log_error("Failed to initialize CHIP-8 VM\n");
-        exit(EXIT_FAILURE);
-    }
-    
     if (display_init() != 0) {
-        log_error("Failed to initialize the display\n");
+        log_critical("Failed to initialize the display\n");
         exit(EXIT_FAILURE);
     }
 
     //ch8_load_rom(cpu, program, SDL_arraysize(program));
 
+    // Load test ROM
     if (!ch8_load_rom_file(cpu, "test_opcode.ch8")) {
         log_critical("Could not load ROM");
         exit(EXIT_FAILURE);
     }
 
+    cpu->running = true;
     while (1) {
         display_event_loop(cpu);
-        
+
         const uint64_t start = SDL_GetPerformanceCounter();
 
         if (cpu->running) {
@@ -77,12 +80,12 @@ int main(int argc, char *argv[])
 
         const uint64_t end = SDL_GetPerformanceCounter();
         const float elapsed_ms = (float) (end - start) / (float) SDL_GetPerformanceFrequency() * 1000;
-        
-        SDL_Delay((Uint32) floorf(16.666f - elapsed_ms));
 
-        if (cpu->running) {
-            cpu->delay_timer = SDL_max(0, cpu->delay_timer - 1);
-            cpu->sound_timer = SDL_max(0, cpu->sound_timer - 1);
+        if (cpu->running){
+            ch8_update_timers(cpu, elapsed_ms);
         }
+
+        // Cap the framerate to 60hz
+        SDL_Delay((Uint32) floorf(16.666f - elapsed_ms));
     }
 }

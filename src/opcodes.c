@@ -169,11 +169,16 @@ void ch8_op_add_vx_to_vy(ch8_cpu *cpu, uint16_t opcode)
 
     const uint8_t x = (opcode & 0x0F00) >> 8;
     const uint8_t y = (opcode & 0x00F0) >> 4;
-    const uint16_t result = cpu->V[x] + cpu->V[y];
 
-    // set the "carry" flag
-    cpu->V[0xF] = result > UINT8_MAX ? 1 : 0;
-    cpu->V[x] = (uint8_t)result;
+    const uint16_t sum = cpu->V[x] + cpu->V[y];
+
+    //set carry flag
+    cpu->V[0xF] = 0;
+    if (sum > UINT8_MAX) {
+        cpu->V[0xF] = 1;
+    }
+
+    cpu->V[x] = (uint8_t)sum;
 
     log_debug("[8XY4] - ADD V[%d] += V[%d] : V[0xF] = %d", x, y, cpu->V[0xF]);
 }
@@ -185,9 +190,13 @@ void ch8_op_sub_vy_from_vx(ch8_cpu *cpu, uint16_t opcode)
 
     const uint8_t x = (opcode & 0x0F00) >> 8;
     const uint8_t y = (opcode & 0x00F0) >> 4;
-    const uint16_t result = cpu->V[x] - cpu->V[y];
 
-    cpu->V[0xF] = cpu->V[x] > cpu->V[y] ? 1 : 0;
+    cpu->V[0xF] = 0;
+
+    if (cpu->V[x] > cpu->V[y]) {
+        cpu->V[0xF] = 1;
+    }
+
     cpu->V[x] -= cpu->V[y];
 
     log_debug("[8XY5] - SUB V[%d] -= V[%d] : V[0xF] = %d", x, y, cpu->V[0xF]);
@@ -301,6 +310,8 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
     }
 
     cpu->V[0xF] = flag;
+
+    display_write_fb(cpu);
 
     log_debug("[DXYN] - Draw X: %d, Y: %d, N: %d", cpu->V[x], cpu->V[y], n);
 }

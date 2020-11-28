@@ -91,33 +91,38 @@ void display_quit()
 void display_clear()
 {
     INIT_CHECK();
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 }
 
 void display_present(const ch8_cpu* cpu)
 {
     INIT_CHECK();
+    assert(cpu != NULL);
+    SDL_RenderCopy(renderer, display, NULL, NULL);
+    SDL_RenderPresent(renderer);
+}
+
+void display_write_fb(const ch8_cpu* cpu)
+{
+    INIT_CHECK();
+    assert(cpu != NULL);
 
     uint8_t* pixels = NULL;
     int x, y, pitch;
+
     SDL_LockTexture(display, NULL, (void**)&pixels, &pitch);
 
     for (y = 0; y < CH8_DISPLAY_HEIGHT; y++) {
         uint32_t* p = (uint32_t*)(pixels + pitch * y);
         for (x = 0; x < CH8_DISPLAY_WIDTH; x++) {
-            //const uint16_t i = (xx + x) + CH8_DISPLAY_WIDTH * (yy + y);
             const uint16_t i = y * CH8_DISPLAY_WIDTH + x;
             const uint8_t color = cpu->framebuffer[i] > 0 ? 255 : 0;
-            (*p) = SDL_MapRGB(pixelFormat, color, color, color);
+            *p = SDL_MapRGB(pixelFormat, color, color, color);
             p++;
         }
     }
 
     SDL_UnlockTexture(display);
-
-    SDL_RenderCopy(renderer, display, NULL, NULL);
-    SDL_RenderPresent(renderer);
 }
 
 void display_event_loop(ch8_cpu *cpu)

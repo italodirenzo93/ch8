@@ -47,12 +47,11 @@ typedef struct ch8_cpu
     bool running;
 } ch8_cpu;
 
-int ch8_init(ch8_cpu **pcpu);
-void ch8_quit(ch8_cpu **pcpu);
 void ch8_reset(ch8_cpu *cpu);
 void ch8_load_rom(ch8_cpu *cpu, const uint8_t *program, size_t size);
 bool ch8_load_rom_file(ch8_cpu *cpu, const char *file);
 uint16_t ch8_next_opcode(ch8_cpu *cpu);
 bool ch8_clock_cycle(ch8_cpu *cpu);
+void ch8_update_timers(ch8_cpu *cpu, float elapsed);
 
 #endif
