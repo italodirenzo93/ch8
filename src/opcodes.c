@@ -381,7 +381,13 @@ void ch8_op_set_I_to_sprite_addr(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_store_bcd_of_vx(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
-    STUBBED("opcode FX33 store BCD");
+
+    const uint8_t x = (opcode & 0x0F00) >> 8;
+    const uint8_t vx = cpu->V[x];
+
+    cpu->memory[cpu->index_register] = (uint8_t)vx / 100;
+    cpu->memory[cpu->index_register + 1] = (uint8_t)(vx % 100) / 10;
+    cpu->memory[cpu->index_register + 2] = (uint8_t)vx % 10;
 }
 
 // 0xFX55
