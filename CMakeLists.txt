@@ -15,7 +15,7 @@ endif()
 include_directories(${SDL2_INCLUDE_DIRS} include)
 
 # add the executable
-set(HEADERS "include/ch8_cpu.h" "include/display.h" "include/opcodes.h" "include/log.h" "include/input.h")
+set(HEADERS "include/ch8_cpu.h" "include/display.h" "include/opcodes.h" "include/log.h" "include/input.h" "include/util.h")
 add_executable(ch8 ${HEADERS} "src/main.c" "src/ch8_cpu.c" "src/opcodes.c" "src/display.c" "src/log.c" "src/input.c")
 target_link_libraries(ch8 ${SDL2_LIBRARIES})
 
@@ -23,7 +23,7 @@ target_link_libraries(ch8 ${SDL2_LIBRARIES})
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/assets/test_opcode.ch8" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
 # add test executable
-add_executable(test_opcodes "test/vendor/unity.c" "test/test_opcodes.c" "src/opcodes.c" "test/log.c")
+add_executable(test_opcodes "test/vendor/unity.c" "test/test_opcodes.c" "src/opcodes.c" "src/ch8_cpu.c" "test/log.c")
 
 enable_testing()
 add_test(opcodes test_opcodes)
