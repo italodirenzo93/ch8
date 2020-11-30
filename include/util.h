@@ -9,7 +9,9 @@ static inline void* ch8_malloc(size_t size)
 {
     assert(size > 0);
     void *ptr = malloc(size);
-    memset(ptr, 0, size);
+    if (ptr != NULL) {
+        memset(ptr, 0, size);
+    }
     return ptr;
 }
 

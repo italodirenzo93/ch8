@@ -2,7 +2,7 @@
 #include "opcodes.h"
 #include "display.h"
 #include "ch8_cpu.h"
-#include "input.h"
+#include "keyboard.h"
 
 // STUBS
 void display_clear()
