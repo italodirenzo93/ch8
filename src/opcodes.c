@@ -27,8 +27,7 @@ void ch8_op_return(ch8_cpu* cpu)
     assert(cpu != NULL);
     log_debug("[00EE] - Return from sub-routine");
 
-    cpu->program_counter = cpu->stack[cpu->stack_pointer];
-    cpu->stack_pointer -= 1;
+    cpu->program_counter = cpu->stack[--cpu->stack_pointer];
 }
 
 // 0x1NNN
@@ -48,8 +47,7 @@ void ch8_op_callsub(ch8_cpu *cpu, uint16_t opcode)
     const uint16_t addr = opcode & 0x0FFF;
     log_debug("[2NNN] - Call subroutine at address %X", addr);
 
-    cpu->stack_pointer += 1;
-    cpu->stack[cpu->stack_pointer] = cpu->program_counter;
+    cpu->stack[cpu->stack_pointer++] = cpu->program_counter;
     cpu->program_counter = addr;
 }
 
@@ -263,6 +261,7 @@ void ch8_op_set_addr(ch8_cpu *cpu, uint16_t opcode)
     cpu->index_register = addr;
 }
 
+// 0xBNNN
 void ch8_jump_to_addr_plus_v0(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
@@ -271,13 +270,14 @@ void ch8_jump_to_addr_plus_v0(ch8_cpu *cpu, uint16_t opcode)
     cpu->program_counter = addr + cpu->V[0];
 }
 
+// 0xCNNN
 void ch8_op_bitwise_rand(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
     const uint8_t x = (opcode & 0x0F00) >> 8;
     const uint8_t nn = (opcode & 0x00FF);
     log_debug("RAND V[%d] = rand() & %d\n", x, nn);
-    cpu->V[x] = rand() & nn;
+    cpu->V[x] = (rand() % 256) & nn;
 }
 
 // 0xDXYN
@@ -342,7 +342,7 @@ void ch8_op_set_vx_to_delay_timer(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
     const uint16_t x = (opcode & 0x0F00) >> 8;
-    cpu->V[x] = cpu->delay_timer > UINT8_MAX ? UINT8_MAX : cpu->delay_timer < 0 ? 0 : (uint8_t) cpu->delay_timer;
+    cpu->V[x] = cpu->delay_timer;
     log_debug("TIMER set V[%d] = delay timer val %d", x, cpu->delay_timer);
 }
 
@@ -425,11 +425,11 @@ void ch8_op_store_v0_to_vx(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
     const uint8_t x = (opcode & 0x0F00) >> 8;
 
-    for (int i = 0; i < x; i++) {
+    for (int i = 0; i <= x; i++) {
         cpu->memory[cpu->index_register + i] = cpu->V[i];
     }
 
-    cpu->index_register += x + 1;
+    //cpu->index_register += x + 1;
 
     log_debug("[FX55] - STORE V[0]..V[%d] in memory", x);
 }
@@ -440,11 +440,11 @@ void ch8_op_fill_v0_to_vx(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
     const uint8_t x = (opcode & 0x0F00) >> 8;
 
-    for (int i = 0; i < x; i++) {
+    for (int i = 0; i <= x; i++) {
         cpu->V[i] = cpu->memory[cpu->index_register + i];
     }
 
-    cpu->index_register += x + 1;
+    //cpu->index_register += x + 1;
 
     log_debug("[FX55] - FILL memory bytes into V[0]..V[%d]", x);
 }

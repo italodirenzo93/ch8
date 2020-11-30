@@ -38,7 +38,7 @@ typedef struct ch8_cpu
     uint16_t index_register;
     uint8_t V[CH8_NUM_REGISTERS]; /* data registers */
     uint16_t program_counter;
-    uint16_t stack[CH8_STACK_SIZE / 2];
+    uint16_t stack[CH8_STACK_SIZE];
     uint8_t stack_pointer;
     ch8_pixel_t framebuffer[CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT];
     uint8_t delay_timer;

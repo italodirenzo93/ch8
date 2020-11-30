@@ -27,14 +27,15 @@ int await_keypress(ch8_cpu* cpu, input_key* key)
 {
     cpu->keypad[KEY_2] = CH8_KEYSTATE_DOWN;
     (*key) = KEY_2;
+    return 0;
 }
 
-bool is_key_up(ch8_cpu* cpu, input_key key)
+bool is_key_up(const ch8_cpu* cpu, input_key key)
 {
     return false;
 }
 
-bool is_key_down(ch8_cpu* cpu, input_key key)
+bool is_key_down(const ch8_cpu* cpu, input_key key)
 {
     return false;
 }
