@@ -1,6 +1,6 @@
 #include "ch8_cpu.h"
 #include "log.h"
-#include "input.h"
+#include "keyboard.h"
 
 int log_init()
 {
@@ -25,8 +25,8 @@ void log_debug(const char* fmt, ...)
 
 int await_keypress(ch8_cpu* cpu, input_key* key)
 {
-    cpu->keypad[INPUT_KEY_UP] = CH8_KEYSTATE_DOWN;
-    (*key) = INPUT_KEY_UP;
+    cpu->keypad[KEY_2] = CH8_KEYSTATE_DOWN;
+    (*key) = KEY_2;
 }
 
 bool is_key_up(ch8_cpu* cpu, input_key key)

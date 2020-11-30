@@ -1,12 +1,13 @@
+#include "opcodes.h"
+
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
 
-#include "opcodes.h"
 #include "display.h"
 #include "ch8_cpu.h"
 #include "log.h"
-#include "input.h"
+#include "keyboard.h"
 
 // 0x00E0
 void ch8_op_display_clear(ch8_cpu *cpu)
@@ -359,7 +360,7 @@ void ch8_op_await_keypress(ch8_cpu *cpu, uint16_t opcode)
         return;
     }
 
-    if (key != INPUT_KEY_UNKNOWN) {
+    if (key != KEY_UNKNOWN) {
         cpu->V[x] = (uint8_t) key;
     }
 }

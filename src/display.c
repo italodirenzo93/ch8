@@ -1,10 +1,11 @@
+#include "display.h"
+
 #include <assert.h>
 #include <SDL.h>
 
-#include "display.h"
 #include "ch8_cpu.h"
+#include "keyboard.h"
 #include "log.h"
-#include "input.h"
 
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
@@ -138,13 +139,13 @@ void display_event_loop(ch8_cpu *cpu)
             break;
         case SDL_KEYDOWN:
         {
-            const input_key key = _scancode_to_key_register(event.key.keysym.scancode);
+            const input_key key = sdl_scancode_to_key_register(event.key.keysym.scancode);
             set_key_down(cpu, key);
             break;
         }
         case SDL_KEYUP:
         {
-            const input_key key = _scancode_to_key_register(event.key.keysym.scancode);
+            const input_key key = sdl_scancode_to_key_register(event.key.keysym.scancode);
             set_key_up(cpu, key);
             break;
         }
