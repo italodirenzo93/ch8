@@ -2,7 +2,7 @@
 #define __INPUT__
 
 #include <stdbool.h>
-#include <SDL_scancode.h>
+#include <SDL_keyboard.h>
 
 #include "ch8_cpu.h"
 
@@ -27,7 +27,7 @@ typedef enum input_key
     KEY_F = 0xF,
 } input_key;
 
-input_key sdl_scancode_to_key_register(SDL_Scancode scancode);
+input_key sdl_keycode_to_key_register(SDL_Keycode keycode);
 
 bool is_key_down(const ch8_cpu *cpu, input_key key);
 bool is_key_up(const ch8_cpu *cpu, input_key key);

@@ -117,38 +117,11 @@ void display_write_fb(const ch8_cpu* cpu)
         uint32_t* p = (uint32_t*)(pixels + pitch * y);
         for (x = 0; x < CH8_DISPLAY_WIDTH; x++) {
             const uint16_t i = y * CH8_DISPLAY_WIDTH + x;
-            const uint8_t color = cpu->framebuffer[i] > 0 ? 255 : 0;
+            const uint8_t color = ch8_get_pixel(cpu, x, y) > 0 ? 255 : 0;
             *p = SDL_MapRGB(pixelFormat, color, color, color);
             p++;
         }
     }
 
     SDL_UnlockTexture(display);
-}
-
-void display_event_loop(ch8_cpu *cpu)
-{
-    assert(cpu != NULL);
-
-    while (SDL_PollEvent(&event))
-    {
-        switch (event.type)
-        {
-        case SDL_QUIT:
-            exit(EXIT_SUCCESS);
-            break;
-        case SDL_KEYDOWN:
-        {
-            const input_key key = sdl_scancode_to_key_register(event.key.keysym.scancode);
-            set_key_down(cpu, key);
-            break;
-        }
-        case SDL_KEYUP:
-        {
-            const input_key key = sdl_scancode_to_key_register(event.key.keysym.scancode);
-            set_key_up(cpu, key);
-            break;
-        }
-        }
-    }
 }

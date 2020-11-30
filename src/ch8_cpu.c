@@ -39,34 +39,18 @@ static const uint8_t font[] = {
 void ch8_reset(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
-    
-    int i;
 
-    // Memory
-    for (i = 0; i < CH8_MEM_SIZE; i++) {
-        cpu->memory[i] = i < FONT_SIZE ? font[i] : 0;
-    }
+    // Initialize all memory to 0
+    memset(cpu->memory, 0, CH8_MEM_SIZE);
 
-    // Data registers
-    for (i = 0; i < CH8_NUM_REGISTERS; i++) {
-        cpu->V[i] = 0;
-    }
+    // Font data sits at beginning
+    memcpy(cpu->memory, font, FONT_SIZE);
 
-    // Stack
-    for (i = 0; i < CH8_STACK_SIZE; i++) {
-        cpu->stack[i] = 0;
-    }
+    // Stack sits at offset 0xEA0-0xEFF
+    cpu->stack = (uint16_t *)(cpu->memory + 0xEA0);
 
-    // Framebuffer
-    const int display_size = CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT;
-    for (i = 0; i < display_size; i++) {
-        cpu->framebuffer[i] = CH8_PIXEL_OFF;
-    }
-
-    // Keypad
-    for (i = 0; i < CH8_NUM_KEYS; i++) {
-        cpu->keypad[i] = CH8_KEYSTATE_DOWN;
-    }
+    // Display refresh sits at 0xF00-0xFFF
+    cpu->framebuffer = (cpu->memory + 0xF00);
 
     cpu->index_register = 0;
     cpu->program_counter = CH8_PROGRAM_START_OFFSET;
@@ -84,10 +68,8 @@ void ch8_load_rom(ch8_cpu *cpu, const uint8_t *program, size_t size)
     assert(cpu != NULL);
     assert(size <= CH8_MAX_PROGRAM_SIZE);
 
-    const int length = CH8_MAX_PROGRAM_SIZE - CH8_PROGRAM_START_OFFSET;
-    for (int i = 0; i < length; i++) {
-        cpu->memory[CH8_PROGRAM_START_OFFSET + i] = i < size ? program[i] : 0;
-    }
+    memset(cpu->memory + CH8_PROGRAM_START_OFFSET, 0, CH8_MAX_PROGRAM_SIZE);
+    memcpy(cpu->memory, program, size);
 
     log_debug("%d byte-long ROM binary loaded", size);
 }
@@ -205,7 +187,6 @@ bool ch8_clock_cycle(ch8_cpu *cpu)
         switch (opcode & 0x000F)
         {
         // Assign value of register B to register A
-        default:
         case 0x0000:
             ch8_op_assign(cpu, opcode);
             break;
@@ -233,6 +214,9 @@ bool ch8_clock_cycle(ch8_cpu *cpu)
         case 0x000E:
             ch8_op_bitshift_left_vx_to_vf(cpu, opcode);
             break;
+        default:
+            log_error("Invalid opcode %X", opcode);
+            break;
         }
         break;
     }
@@ -255,14 +239,16 @@ bool ch8_clock_cycle(ch8_cpu *cpu)
         break;
     case 0xE000:
     {
-        uint8_t vx = (opcode & 0x0F00) >> 8;
         switch (opcode & 0x00FF)
         {
         case 0x009E:
-            ch8_op_keyop_eq(cpu, vx);
+            ch8_op_keyop_eq(cpu, opcode);
             break;
         case 0x00A1:
-            ch8_op_keyop_neq(cpu, vx);
+            ch8_op_keyop_neq(cpu, opcode);
+            break;
+        default:
+            log_error("Invalid opcode %X", opcode);
             break;
         }
         break;
@@ -271,33 +257,36 @@ bool ch8_clock_cycle(ch8_cpu *cpu)
     {
         switch (opcode & 0x00FF)
         {
-            case 0x0007:
-                ch8_op_set_vx_to_delay_timer(cpu, opcode);
-                break;
-            case 0x000A:
-                ch8_op_await_keypress(cpu, opcode);
-                break;
-            case 0x0015:
-                ch8_op_set_delay_timer_to_vx(cpu, opcode);
-                break;
-            case 0x0018:
-                ch8_op_set_sound_timer_to_vx(cpu, opcode);
-                break;
-            case 0x001E:
-                ch8_op_add_vx_to_I(cpu, opcode);
-                break;
-            case 0x0029:
-                ch8_op_set_I_to_sprite_addr(cpu, opcode);
-                break;
-            case 0x0033:
-                ch8_op_store_bcd_of_vx(cpu, opcode);
-                break;
-            case 0x0055:
-                ch8_op_store_v0_to_vx(cpu, opcode);
-                break;
-            case 0x0065:
-                ch8_op_fill_v0_to_vx(cpu, opcode);
-                break;
+        case 0x0007:
+            ch8_op_set_vx_to_delay_timer(cpu, opcode);
+            break;
+        case 0x000A:
+            ch8_op_await_keypress(cpu, opcode);
+            break;
+        case 0x0015:
+            ch8_op_set_delay_timer_to_vx(cpu, opcode);
+            break;
+        case 0x0018:
+            ch8_op_set_sound_timer_to_vx(cpu, opcode);
+            break;
+        case 0x001E:
+            ch8_op_add_vx_to_I(cpu, opcode);
+            break;
+        case 0x0029:
+            ch8_op_set_I_to_sprite_addr(cpu, opcode);
+            break;
+        case 0x0033:
+            ch8_op_store_bcd_of_vx(cpu, opcode);
+            break;
+        case 0x0055:
+            ch8_op_store_v0_to_vx(cpu, opcode);
+            break;
+        case 0x0065:
+            ch8_op_fill_v0_to_vx(cpu, opcode);
+            break;
+        default:
+            log_error("Invalid opcode %X", opcode);
+            break;
         }
         break;
     }
@@ -325,4 +314,28 @@ void ch8_update_timers(ch8_cpu *cpu, float elapsed)
 
         timer_val = 0.0f;
     }
+}
+
+bool ch8_get_pixel(const ch8_cpu *cpu, int x, int y)
+{
+    int index = y * CH8_DISPLAY_WIDTH + x;
+    int byteIndex = index / 8;
+    int offset = index % 8;
+    return cpu->framebuffer[byteIndex] & (0x80 >> offset);
+}
+
+void ch8_set_pixel(ch8_cpu *cpu, int x, int y, bool on)
+{
+    int index = y * CH8_DISPLAY_WIDTH + x;
+    int byteIndex = index / 8;
+    int offset = index % 8;
+    uint8_t byte = cpu->framebuffer[byteIndex];
+
+    if(on) {
+        byte = byte | (0x80 >> offset);
+    } else {
+        byte = byte & (~(0x80 >> offset));
+    }
+
+    cpu->framebuffer[byteIndex] = byte;
 }

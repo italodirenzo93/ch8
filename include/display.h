@@ -10,7 +10,6 @@ int display_init();
 void display_quit();
 void display_clear();
 void display_present(const ch8_cpu *cpu);
-void display_event_loop(ch8_cpu *cpu);
 void display_write_fb(const ch8_cpu *cpu);
 
 #endif
