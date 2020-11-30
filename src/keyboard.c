@@ -3,71 +3,60 @@
 #include <assert.h>
 
 #include <SDL_events.h>
-#include <SDL_keyboard.h>
 
 #include "ch8_cpu.h"
 #include "log.h"
 
-input_key sdl_scancode_to_key_register(SDL_Scancode scancode)
+input_key sdl_keycode_to_key_register(SDL_Keycode keycode)
 {
-    switch (scancode)
+    switch (keycode)
     {
-    case SDL_SCANCODE_0:
-    case SDL_SCANCODE_KP_0:
+    case SDLK_KP_0:
         return KEY_0;
 
-    case SDL_SCANCODE_1:
-    case SDL_SCANCODE_KP_1:
+    case SDLK_KP_1:
         return KEY_1;
 
-    case SDL_SCANCODE_2:
-    case SDL_SCANCODE_KP_2:
+    case SDLK_KP_2:
         return KEY_2;
 
-    case SDL_SCANCODE_3:
-    case SDL_SCANCODE_KP_3:
+    case SDLK_KP_3:
         return KEY_3;
 
-    case SDL_SCANCODE_4:
-    case SDL_SCANCODE_KP_4:
+    case SDLK_KP_4:
         return KEY_4;
 
-    case SDL_SCANCODE_5:
-    case SDL_SCANCODE_KP_5:
+    case SDLK_KP_5:
         return KEY_5;
 
-    case SDL_SCANCODE_6:
-    case SDL_SCANCODE_KP_6:
+    case SDLK_KP_6:
         return KEY_6;
 
-    case SDL_SCANCODE_7:
-    case SDL_SCANCODE_KP_7:
+    case SDLK_KP_7:
         return KEY_7;
 
-    case SDL_SCANCODE_8:
-    case SDL_SCANCODE_KP_8:
+    case SDLK_KP_8:
         return KEY_8;
 
-    case SDL_SCANCODE_9:
-    case SDL_SCANCODE_KP_9:
+    case SDLK_KP_9:
         return KEY_9;
 
-    case SDL_SCANCODE_KP_A:
+    case SDLK_KP_A:
         return KEY_A;
 
-    case SDL_SCANCODE_KP_B:
+    case SDLK_KP_B:
         return KEY_B;
 
-    case SDL_SCANCODE_KP_C:
+    case SDLK_KP_C:
         return KEY_C;
 
-    case SDL_SCANCODE_KP_D:
+    case SDLK_KP_D:
         return KEY_D;
 
-    case SDL_SCANCODE_KP_E:
+    case SDLK_KP_E:
         return KEY_E;
 
-    case SDL_SCANCODE_KP_F:
+    case SDLK_KP_F:
         return KEY_F;
         
     default:
@@ -81,7 +70,7 @@ bool is_key_down(const ch8_cpu *cpu, input_key key)
     if (key == KEY_UNKNOWN) {
         return false;
     }
-    return cpu->keypad[key] == CH8_KEYSTATE_DOWN;
+    return cpu->keypad[key] == true;
 }
 
 bool is_key_up(const ch8_cpu *cpu, input_key key)
@@ -90,14 +79,14 @@ bool is_key_up(const ch8_cpu *cpu, input_key key)
     if (key == KEY_UNKNOWN) {
         return false;
     }
-    return cpu->keypad[key] == CH8_KEYSTATE_UP;
+    return cpu->keypad[key] == false;
 }
 
 void set_key_down(ch8_cpu *cpu, input_key key)
 {
     assert(cpu != NULL);
     if (key != KEY_UNKNOWN) {
-        cpu->keypad[key] = CH8_KEYSTATE_DOWN;
+        cpu->keypad[key] = true;
     }
 }
 
@@ -105,7 +94,7 @@ void set_key_up(ch8_cpu *cpu, input_key key)
 {
     assert(cpu != NULL);
     if (key != KEY_UNKNOWN) {
-        cpu->keypad[key] = CH8_KEYSTATE_UP;
+        cpu->keypad[key] = false;
     }
 }
 
@@ -121,7 +110,7 @@ int await_keypress(ch8_cpu *cpu, input_key *key)
         }
     }
     
-    (*key) = sdl_scancode_to_key_register(event.key.keysym.scancode);
+    (*key) = sdl_keycode_to_key_register(event.key.keysym.sym);
     if ((*key) != KEY_UNKNOWN) {
         set_key_down(cpu, (*key));
     }

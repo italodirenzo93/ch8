@@ -2,8 +2,11 @@
 #define __UTIL__
 
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define STUBBED(x) printf("STUBBED: %s\n", x)
 
 static inline void* ch8_malloc(size_t size)
 {

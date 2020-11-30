@@ -8,6 +8,7 @@
 #include "ch8_cpu.h"
 #include "log.h"
 #include "keyboard.h"
+#include "util.h"
 
 // 0x00E0
 void ch8_op_display_clear(ch8_cpu *cpu)
@@ -15,9 +16,8 @@ void ch8_op_display_clear(ch8_cpu *cpu)
     assert(cpu != NULL);
     log_debug("[00E0] - Clear Display");
 
-    const int length = CH8_DISPLAY_WIDTH * CH8_DISPLAY_HEIGHT;
-    for (int i = 0; i < length; i++) {
-        cpu->framebuffer[i] = CH8_PIXEL_OFF;
+    for (int i = 0; i < CH8_DISPLAY_SIZE; i++) {
+        cpu->framebuffer[i] = 0;
     }
 }
 
@@ -289,34 +289,45 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
     const uint8_t y = (opcode & 0x00F0) >> 4;
     const uint8_t n = opcode & 0x000F;
 
-    uint8_t flag = 0;
+    int startX = cpu->V[x];
+    int startY = cpu->V[y];
 
-    for (int row = 0; row < n; row++) {
-        uint8_t spr = cpu->memory[cpu->index_register + row];
-
-        for (int col = 0; col < 8; col++) {
-            if ((spr & 0x80) > 0) {
-                const int dx = cpu->V[x] + col;
-                const int dy = cpu->V[y] + row;
-                const int i = dy * CH8_DISPLAY_WIDTH + dx;
-
-                cpu->framebuffer[i] ^= CH8_PIXEL_ON;
-                if (flag == 0) {
-                    flag = cpu->framebuffer[i];
-                }
-            }
-
-            spr <<= 1;
-        }
+    if (startX >= CH8_DISPLAY_WIDTH) {
+        startX = startX % CH8_DISPLAY_WIDTH;
+    }
+    if (startY >= CH8_DISPLAY_HEIGHT) {
+        startY = startY % CH8_DISPLAY_HEIGHT;
     }
 
-    cpu->V[0xF] = flag;
+    int endX = ch8_min(startX + 8, CH8_DISPLAY_WIDTH);
+    int endY = ch8_min(startY + n, CH8_DISPLAY_HEIGHT);
+
+    cpu->V[0xF] = 0;
+
+    for (int y = startY; y < endY; y++) {
+        uint8_t spriteByte = cpu->memory[cpu->index_register + (y - startY)];
+        for (int x = startX; x < endX; x++) {
+            // NOTE: spritePixel and screenPixel are 0 or non-zero
+            // not 0 or 1 !!!
+            int spritePixel = spriteByte & (0x80 >> (x - startX));
+            int screenPixel = ch8_get_pixel(cpu, x, y);
+
+            if(spritePixel) {
+                if(screenPixel) {
+                 cpu->V[0xF] = 1;
+                }
+
+                ch8_set_pixel(cpu, x, y, screenPixel == 0 ? true : false);
+            }
+        }
+    }
 
     display_write_fb(cpu);
 
     log_debug("[DXYN] - Draw X: %d, Y: %d, N: %d", cpu->V[x], cpu->V[y], n);
 }
 
+// 0xEX9E
 void ch8_op_keyop_eq(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
@@ -327,6 +338,7 @@ void ch8_op_keyop_eq(ch8_cpu *cpu, uint16_t opcode)
     }
 }
 
+// 0xEXA1
 void ch8_op_keyop_neq(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
