@@ -25,7 +25,7 @@ void log_debug(const char* fmt, ...)
 
 int await_keypress(ch8_cpu* cpu, input_key* key)
 {
-    cpu->keypad[KEY_2] = CH8_KEYSTATE_DOWN;
+    cpu->keypad[KEY_2] = true;
     (*key) = KEY_2;
     return 0;
 }
