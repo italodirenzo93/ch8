@@ -32,9 +32,25 @@ static const uint8_t font[] = {
     0xF0, 0x80, 0xF0, 0x80, 0xF0,
     0xF0, 0x80, 0xF0, 0x80, 0x80,
 };
-
 #define FONT_SIZE 80
 // clang-format on
+
+static float delay_timer_val = 0.0f;
+static float sound_timer_val = 0.0f;
+
+static void _update_timer(uint8_t *timer, float *accumulator, float elapsed_ms)
+{
+    assert(timer != NULL);
+    assert(accumulator != NULL);
+    if (*timer != 0) {
+        *accumulator += elapsed_ms;
+        if (*accumulator >= 16.666f) {
+            *timer -= 1;
+            *accumulator = 0.0f;
+            printf("Accum: %f\n", *accumulator);
+        }
+    }
+}
 
 void ch8_reset(ch8_cpu *cpu)
 {
@@ -69,7 +85,7 @@ void ch8_load_rom(ch8_cpu *cpu, const uint8_t *program, size_t size)
     assert(size <= CH8_MAX_PROGRAM_SIZE);
 
     memset(cpu->memory + CH8_PROGRAM_START_OFFSET, 0, CH8_MAX_PROGRAM_SIZE);
-    memcpy(cpu->memory, program, size);
+    memcpy(cpu->memory + CH8_PROGRAM_START_OFFSET, program, size);
 
     log_debug("%d byte-long ROM binary loaded", size);
 }
@@ -118,7 +134,7 @@ uint16_t ch8_next_opcode(ch8_cpu *cpu)
     return opcode;
 }
 
-bool ch8_clock_cycle(ch8_cpu *cpu)
+bool ch8_clock_cycle(ch8_cpu *cpu, float elapsed_ms)
 {
     assert(cpu != NULL);
 
@@ -298,22 +314,11 @@ bool ch8_clock_cycle(ch8_cpu *cpu)
     // Advance the program counter 2 bytes at a time
     cpu->program_counter += CH8_PC_STEP_SIZE;
 
+    // Update timers
+    _update_timer(&cpu->delay_timer, &delay_timer_val, elapsed_ms);
+    _update_timer(&cpu->sound_timer, &sound_timer_val, elapsed_ms);
+
     return true;
-}
-
-static float timer_val = 0.0f;
-void ch8_update_timers(ch8_cpu *cpu, float elapsed)
-{
-    assert(cpu != NULL);
-    
-    timer_val += elapsed;
-
-    if (timer_val >= 16.666f) {
-        cpu->delay_timer = ch8_max(0, cpu->delay_timer - 1);
-        cpu->sound_timer = ch8_max(0, cpu->sound_timer - 1);
-
-        timer_val = 0.0f;
-    }
 }
 
 bool ch8_get_pixel(const ch8_cpu *cpu, int x, int y)

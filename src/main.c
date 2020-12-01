@@ -10,7 +10,21 @@
 ch8_cpu *cpu = NULL;
 static SDL_Event event;
 
-static const uint8_t program[] = { 0x00, 0xE0 };
+//static const uint8_t program[] = { 0x00, 0xE0 };
+static const uint8_t program[] = {
+    0x62, 0x10, // store 10 in V[2]
+    0xF2, 0x15, // set delay timer to V[2]
+    0x62, 0x10, // store 10 in V[2]
+    0x62, 0x10, // store 10 in V[2]
+    0x62, 0x10, // store 10 in V[2]
+    0x62, 0x10, // store 10 in V[2]
+    0x62, 0x10, // store 10 in V[2]
+    0x62, 0x10, // store 10 in V[2]
+    0x62, 0x10, // store 10 in V[2]
+    0x62, 0x10, // store 10 in V[2]
+    0x62, 0x10, // store 10 in V[2]
+    0x62, 0x10, // store 10 in V[2]
+};
 
 static void initialize(int argc, char* argv[])
 {
@@ -32,9 +46,10 @@ static void initialize(int argc, char* argv[])
     }
 
     // Load test ROM
+    //ch8_load_rom(cpu, program, SDL_arraysize(program));
     // TODO: Get ROM filename from argv
-    //if (!ch8_load_rom_file(cpu, "test_opcode.ch8")) {
-    if (!ch8_load_rom_file(cpu, argc > 1 ? argv[1] : "test_opcode.ch8")) {
+    if (!ch8_load_rom_file(cpu, "test_opcode.ch8")) {
+    //if (!ch8_load_rom_file(cpu, "PONG")) {
         log_critical("Could not load ROM");
         exit(EXIT_FAILURE);
     }
@@ -75,23 +90,24 @@ int main(int argc, char *argv[])
     atexit(cleanup);
     initialize(argc, argv);
 
+    float elapsed_ms = 0.0f;
     while (1) {
         window_message_loop();
 
+        const uint64_t start = SDL_GetPerformanceCounter();
+
         if (cpu->running) {
-            const uint64_t start = SDL_GetPerformanceCounter();
-
             display_clear();
-            cpu->running = ch8_clock_cycle(cpu);
+            cpu->running = ch8_clock_cycle(cpu, elapsed_ms);
             display_present(cpu);
-
-            const uint64_t end = SDL_GetPerformanceCounter();
-            const float elapsed_ms = (float)(end - start) / (float)SDL_GetPerformanceFrequency() * 1000;
-
-            ch8_update_timers(cpu, elapsed_ms);
-
-            // Cap the framerate to 60hz
-            SDL_Delay((Uint32)floorf(16.666f - elapsed_ms));
         }
+
+        const uint64_t end = SDL_GetPerformanceCounter();
+        const float elapsed = (float)((end - start) * 1000) / SDL_GetPerformanceFrequency();
+
+        // Cap the framerate to 60hz
+        SDL_Delay((Uint32)floorf(16.666f - elapsed));
+
+        elapsed_ms = elapsed;
     }
 }

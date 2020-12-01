@@ -44,8 +44,7 @@ void ch8_reset(ch8_cpu *cpu);
 void ch8_load_rom(ch8_cpu *cpu, const uint8_t *program, size_t size);
 bool ch8_load_rom_file(ch8_cpu *cpu, const char *file);
 uint16_t ch8_next_opcode(ch8_cpu *cpu);
-bool ch8_clock_cycle(ch8_cpu *cpu);
-void ch8_update_timers(ch8_cpu *cpu, float elapsed);
+bool ch8_clock_cycle(ch8_cpu *cpu, float elapsed_ms);
 
 bool ch8_get_pixel(const ch8_cpu *cpu, int x, int y);
 void ch8_set_pixel(ch8_cpu *cpu, int x, int y, bool on);
