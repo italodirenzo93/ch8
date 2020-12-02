@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <time.h>
 #include <SDL.h>
 
 #include "ch8_cpu.h"
@@ -33,6 +34,7 @@ static void initialize(int argc, char* argv[])
 
     // Initialize VM
     ch8_reset(cpu);
+    srand((unsigned int)time(NULL));
 
     // Initialize sub-systems
     if (log_init() != 0) {
@@ -48,8 +50,7 @@ static void initialize(int argc, char* argv[])
     // Load test ROM
     //ch8_load_rom(cpu, program, SDL_arraysize(program));
     // TODO: Get ROM filename from argv
-    if (!ch8_load_rom_file(cpu, "test_opcode.ch8")) {
-    //if (!ch8_load_rom_file(cpu, "PONG")) {
+    if (!ch8_load_rom_file(cpu, "c8_test.c8")) {
         log_critical("Could not load ROM");
         exit(EXIT_FAILURE);
     }
@@ -106,7 +107,7 @@ int main(int argc, char *argv[])
         const float elapsed = (float)((end - start) * 1000) / SDL_GetPerformanceFrequency();
 
         // Cap the framerate to 60hz
-        SDL_Delay((Uint32)floorf(16.666f - elapsed));
+        SDL_Delay((Uint32)SDL_floorf(16.666f - elapsed));
 
         elapsed_ms = elapsed;
     }

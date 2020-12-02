@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <time.h>
 
 #include "ch8_cpu.h"
 #include "opcodes.h"
