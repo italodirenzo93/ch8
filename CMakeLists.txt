@@ -15,7 +15,7 @@ endif()
 include_directories(${SDL2_INCLUDE_DIRS} include)
 
 # add the executable
-add_executable(ch8 "src/main.cpp")
+add_executable(ch8 "src/main.cpp" "include/cpu.hpp" "src/cpu.cpp" "include/log.hpp" "src/log.cpp")
 target_link_libraries(ch8 ${SDL2_LIBRARIES})
 
 # add test executable

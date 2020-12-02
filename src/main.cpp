@@ -2,6 +2,9 @@
 
 #include <SDL.h>
 
+#include "log.hpp"
+#include "cpu.hpp"
+
 SDL_Window* window = nullptr;
 SDL_Event ev = { 0 };
 static bool running = true;
@@ -26,6 +29,8 @@ static void initialize()
         msg += SDL_GetError();
         throw std::exception(msg.c_str());
     }
+
+    ch8::log::init();
 }
 
 static void cleanup()
@@ -54,6 +59,9 @@ int main(int argc, char* argv[])
 
     try {
         initialize();
+
+        ch8::cpu cpu;
+        cpu.load_rom("test_opcode.ch8");
 
         while (running) {
             window_message_loop();
