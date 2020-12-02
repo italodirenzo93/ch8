@@ -44,7 +44,13 @@ namespace ch8
 
     bool Cpu::GetPixel(int x, int y) const
     {
-        return false;
+        int index = y * DisplayWidth + x;
+        int byteIndex = index / 8;
+        int offset = index % 8;
+
+        int pixel = *(display.first + offset) & (0x80 >> offset);
+
+        return pixel != 0;
     }
 
     Cpu::opcode_handler_t Cpu::GetOpcodeHandler(const opcode_t& opcode) const noexcept
@@ -63,8 +69,14 @@ namespace ch8
         memory.fill(0);
         v.fill(0);
 
-        pc = memory.begin() + ProgramOffset;
+        font = std::make_pair(memory.begin(), memory.begin() + ProgramOffset);
+        program = std::make_pair(memory.begin() + ProgramOffset, memory.begin() + StackOffset);
+        stack = std::make_pair(memory.begin() + StackOffset, memory.begin() + DisplayOffset);
+        display = std::make_pair(memory.begin() + DisplayOffset, memory.end());
+
+        pc = program.first;
         index = memory.begin();
+        stackPointer = stack.first;
 
         delayTimer = 0;
         soundTimer = 0;
@@ -112,10 +124,25 @@ namespace ch8
 
     void Cpu::SetPixel(int x, int y, bool on)
     {
+        int index = y * DisplayWidth + x;
+        int byteIndex = index / 8;
+        int offset = index % 8;
+        auto byte = display.first + offset;
+
+        if (on) {
+            *byte = *byte | (0x80 >> offset);
+        }
+        else {
+            *byte = *byte & (~(0x80 >> offset));
+        }
     }
 
-    void Cpu::SetOpcodeHandler(const opcode_handler_t& handler)
+    void Cpu::SetOpcodeHandler(const opcode_t& opcode, const opcode_handler_t& handler)
     {
+        if (true) {
+            throw Exception("Invalid opcode");
+        }
+        opcodeTable[opcode] = handler;
     }
 
     void Cpu::ClockCycle(float elapsed)
