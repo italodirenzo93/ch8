@@ -1,11 +1,33 @@
 #include "cpu.hpp"
 
+#include <sstream>
 #include <fstream>
 
 #include "log.hpp"
 
 namespace ch8
 {
+
+    exception::exception() noexcept
+        : message("Unhandled exception")
+    {
+    }
+
+    exception::exception(const std::string& msg) noexcept
+        : message(msg)
+    {
+    }
+
+    exception::exception(const exception& other) noexcept
+        : message(other.message)
+    {
+    }
+
+    const char* exception::what() const noexcept
+    {
+        return message.c_str();
+    }
+
     // Constructors
     cpu::cpu() noexcept
         :
@@ -50,7 +72,7 @@ namespace ch8
         if (iter == opcode_table.end()) {
             return nullptr;
         }
-        
+
         return iter->second;
     }
 
@@ -76,14 +98,20 @@ namespace ch8
 
         // Open the ROM file for reading
         std::ifstream ifs(filename, std::ios::binary | std::ios::ate);
-        int size = static_cast<int>(ifs.tellg());
+
+        const int size = static_cast<int>(ifs.tellg());
         ifs.seekg(0, std::ios::beg);
 
+        if (size == -1) {
+            std::ostringstream oss;
+            oss << "ROM file " << filename << " not found" << std::endl;
+            throw exception(oss.str());
+        }
+
         if (size > MaxProgramSize) {
-            std::string msg = "File size too large (";
-            msg += size;
-            msg += ")";
-            throw std::exception(msg.c_str());
+            std::ostringstream oss;
+            oss << "File size too large (" << size << " bytes)" << std::endl;
+            throw exception(oss.str());
         }
 
         // Iterators for program memory range
@@ -92,7 +120,7 @@ namespace ch8
 
         // Start by initializing the program range in memory to 0
         std::fill(programStartIter, programEndIter, 0);
-        
+
         // Load the ROM into memory
         auto iter = programStartIter;
         while (ifs.good()) {
@@ -112,4 +140,5 @@ namespace ch8
     void cpu::clock_cycle(float elapsed)
     {
     }
+
 }

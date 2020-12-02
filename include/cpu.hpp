@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <map>
 #include <functional>
 #include <array>
@@ -8,6 +9,18 @@
 
 namespace ch8
 {
+
+    class exception : public std::exception {
+    public:
+        exception() noexcept;
+        exception(const std::string& msg) noexcept;
+        exception(const exception& other) noexcept;
+
+        virtual const char* what() const noexcept override;
+    private:
+        std::string message;
+    };
+
     // CHIP-8 virtual machine CPU
     class cpu
     {
@@ -54,4 +67,5 @@ namespace ch8
         std::array<bool, 16> keypad;
         bool running;
     };
+
 }

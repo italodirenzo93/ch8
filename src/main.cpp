@@ -14,7 +14,7 @@ static void initialize()
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
         std::string msg = "SDL failed to initialize: ";
         msg += SDL_GetError();
-        throw std::exception(msg.c_str());
+        throw ch8::exception(msg);
     }
 
     window = SDL_CreateWindow(
@@ -27,7 +27,7 @@ static void initialize()
     if (window == nullptr) {
         std::string msg = "Failed to create window: ";
         msg += SDL_GetError();
-        throw std::exception(msg.c_str());
+        throw ch8::exception(msg);
     }
 
     ch8::log::init();
@@ -68,6 +68,10 @@ int main(int argc, char* argv[])
         }
 
         cleanup();
+    }
+    catch (const ch8::exception& e) {
+        std::cerr << "CHIP-8 error : " << e.what() << std::endl;
+        return EXIT_FAILURE;
     }
     catch (const std::exception& e) {
         std::cerr << "Fatal error: " << e.what() << std::endl;
