@@ -4,17 +4,18 @@
 
 #include "log.hpp"
 #include "cpu.hpp"
+#include "Exception.hpp"
 
 SDL_Window* window = nullptr;
 SDL_Event ev = { 0 };
 static bool running = true;
 
-static void initialize()
+static void Initialize()
 {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
         std::string msg = "SDL failed to initialize: ";
         msg += SDL_GetError();
-        throw ch8::exception(msg);
+        throw ch8::Exception(msg);
     }
 
     window = SDL_CreateWindow(
@@ -27,13 +28,13 @@ static void initialize()
     if (window == nullptr) {
         std::string msg = "Failed to create window: ";
         msg += SDL_GetError();
-        throw ch8::exception(msg);
+        throw ch8::Exception(msg);
     }
 
     ch8::log::init();
 }
 
-static void cleanup()
+static void Cleanup()
 {
     if (window != nullptr) {
         SDL_DestroyWindow(window);
@@ -42,7 +43,7 @@ static void cleanup()
     SDL_Quit();
 }
 
-static void window_message_loop()
+static void WindowMessageLoop()
 {
     while (SDL_PollEvent(&ev)) {
         switch (ev.type) {
@@ -58,18 +59,18 @@ int main(int argc, char* argv[])
     std::cout << "Hello World!\n";
 
     try {
-        initialize();
+        Initialize();
 
-        ch8::cpu cpu;
-        cpu.load_rom("test_opcode.ch8");
+        ch8::Cpu cpu;
+        cpu.LoadRomFromFile("test_opcode.ch8");
 
         while (running) {
-            window_message_loop();
+            WindowMessageLoop();
         }
 
-        cleanup();
+        Cleanup();
     }
-    catch (const ch8::exception& e) {
+    catch (const ch8::Exception& e) {
         std::cerr << "CHIP-8 error : " << e.what() << std::endl;
         return EXIT_FAILURE;
     }

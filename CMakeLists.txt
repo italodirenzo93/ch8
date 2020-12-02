@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 # set the project name
 project(ch8 CXX)
 set(CMAKE_CXX_STANDARD_REQUIRED 11)
-set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
+set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ /EHsc")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
 
 # SDL2
@@ -17,7 +17,8 @@ endif()
 include_directories(${SDL2_INCLUDE_DIRS} include)
 
 # add the executable
-add_executable(ch8 "src/main.cpp" "include/cpu.hpp" "src/cpu.cpp" "include/log.hpp" "src/log.cpp")
+set(HEADERS "include/Cpu.hpp" "include/Exception.hpp" "include/Log.hpp")
+add_executable(ch8 ${HEADERS} "src/Main.cpp" "src/Exception.cpp" "src/Cpu.cpp" "src/Log.cpp" )
 target_link_libraries(ch8 ${SDL2_LIBRARIES})
 
 # add test executable

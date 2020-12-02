@@ -4,72 +4,53 @@
 #include <fstream>
 
 #include "log.hpp"
+#include "Exception.hpp"
 
 namespace ch8
 {
 
-    exception::exception() noexcept
-        : message("Unhandled exception")
-    {
-    }
-
-    exception::exception(const std::string& msg) noexcept
-        : message(msg)
-    {
-    }
-
-    exception::exception(const exception& other) noexcept
-        : message(other.message)
-    {
-    }
-
-    const char* exception::what() const noexcept
-    {
-        return message.c_str();
-    }
-
     // Constructors
-    cpu::cpu() noexcept
+    Cpu::Cpu() noexcept
         :
-        opcode_table(),
+        opcodeTable(),
         memory(),
         v(),
-        program_counter(ProgramOffset),
-        index_register(0),
-        delay_timer(0),
-        sound_timer(0),
+        pc(memory.begin() + ProgramOffset),
+        index(memory.begin()),
+        delayTimer(0),
+        soundTimer(0),
         keypad(),
         running(false) {}
 
-    cpu::cpu(const std::map<opcode_t, opcode_handler>& opcodes) noexcept
+    Cpu::Cpu(const std::map<opcode_t, opcode_handler_t>& opcodes) noexcept
         :
-        opcode_table(opcodes),
+        opcodeTable(opcodes),
         memory(),
         v(),
-        program_counter(ProgramOffset),
-        index_register(0),
-        delay_timer(0),
-        sound_timer(0),
+        pc(memory.begin() + ProgramOffset),
+        index(memory.begin()),
+        delayTimer(0),
+        soundTimer(0),
         keypad(),
         running(false) {}
 
-    cpu::~cpu() noexcept {}
+    Cpu::~Cpu() noexcept {}
 
     // Accessors
-    bool cpu::is_running() const noexcept
+    bool Cpu::IsRunning() const noexcept
     {
         return running;
     }
 
-    bool cpu::get_pixel(int x, int y) const
+    bool Cpu::GetPixel(int x, int y) const
     {
         return false;
     }
 
-    cpu::opcode_handler cpu::get_opcode_handler(const opcode_t& opcode) const noexcept
+    Cpu::opcode_handler_t Cpu::GetOpcodeHandler(const opcode_t& opcode) const noexcept
     {
-        auto iter = opcode_table.find(opcode);
-        if (iter == opcode_table.end()) {
+        auto iter = opcodeTable.find(opcode);
+        if (iter == opcodeTable.end()) {
             return nullptr;
         }
 
@@ -77,22 +58,22 @@ namespace ch8
     }
 
     // Mutators
-    void cpu::reset() noexcept
+    void Cpu::Reset() noexcept
     {
         memory.fill(0);
         v.fill(0);
 
-        program_counter = 0;
-        index_register = 0;
+        pc = memory.begin() + ProgramOffset;
+        index = memory.begin();
 
-        delay_timer = 0;
-        sound_timer = 0;
+        delayTimer = 0;
+        soundTimer = 0;
 
         keypad.fill(false);
         running = false;
     }
 
-    void cpu::load_rom(const char* filename)
+    void Cpu::LoadRomFromFile(const char* filename)
     {
         log::debug("Loading ROM file %s...", filename);
 
@@ -105,13 +86,13 @@ namespace ch8
         if (size == -1) {
             std::ostringstream oss;
             oss << "ROM file " << filename << " not found" << std::endl;
-            throw exception(oss.str());
+            throw Exception(oss.str());
         }
 
         if (size > MaxProgramSize) {
             std::ostringstream oss;
             oss << "File size too large (" << size << " bytes)" << std::endl;
-            throw exception(oss.str());
+            throw Exception(oss.str());
         }
 
         // Iterators for program memory range
@@ -129,15 +110,15 @@ namespace ch8
         }
     }
 
-    void cpu::set_pixel(int x, int y, bool on)
+    void Cpu::SetPixel(int x, int y, bool on)
     {
     }
 
-    void cpu::set_opcode_handler(const opcode_handler& handler)
+    void Cpu::SetOpcodeHandler(const opcode_handler_t& handler)
     {
     }
 
-    void cpu::clock_cycle(float elapsed)
+    void Cpu::ClockCycle(float elapsed)
     {
     }
 

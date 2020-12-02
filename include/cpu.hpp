@@ -10,59 +10,52 @@
 namespace ch8
 {
 
-    class exception : public std::exception {
-    public:
-        exception() noexcept;
-        exception(const std::string& msg) noexcept;
-        exception(const exception& other) noexcept;
-
-        virtual const char* what() const noexcept override;
-    private:
-        std::string message;
-    };
-
     // CHIP-8 virtual machine CPU
-    class cpu
+    class Cpu
     {
     public:
         // Types
         using opcode_t = uint16_t;
-        using opcode_handler = std::function<int(cpu*, opcode_t)>;
+        using opcode_handler_t = std::function<int(Cpu&, opcode_t)>;
 
         // Constructors
-        cpu() noexcept;
-        cpu(const std::map<opcode_t, opcode_handler>& opcodes) noexcept;
-        ~cpu() noexcept;
+        Cpu() noexcept;
+        Cpu(const std::map<opcode_t, opcode_handler_t>& opcodes) noexcept;
+        ~Cpu() noexcept;
 
-        cpu(const cpu&) = delete;
-        cpu& operator=(const cpu&) = delete;
+        Cpu(const Cpu&) = delete;
+        Cpu& operator=(const Cpu&) = delete;
 
         // Accessors
-        bool is_running() const noexcept;
-        bool get_pixel(int x, int y) const;
-        opcode_handler get_opcode_handler(const opcode_t& opcode) const noexcept;
+        bool IsRunning() const noexcept;
+        bool GetPixel(int x, int y) const;
+        opcode_handler_t GetOpcodeHandler(const opcode_t& opcode) const noexcept;
 
         // Mutators
-        void reset() noexcept;
-        void load_rom(const char* filename);
-        void set_pixel(int x, int y, bool on);
-        void set_opcode_handler(const opcode_handler& handler);
-        void clock_cycle(float elapsed);
+        void Reset() noexcept;
+        void LoadRomFromFile(const char* filename);
+        void SetPixel(int x, int y, bool on);
+        void SetOpcodeHandler(const opcode_handler_t& handler);
+        void ClockCycle(float elapsed);
 
         // Constants
         static constexpr uint32_t MaxProgramSize = 3232;
         static constexpr uint16_t ProgramOffset = 0x200;
 
     private:
-        std::map<opcode_t, opcode_handler> opcode_table;
-        std::array<uint8_t, 4096> memory;
+        // Types
+        using memory_t = std::array<uint8_t, 4096>;
+
+        // Data
+        std::map<opcode_t, opcode_handler_t> opcodeTable;
+        memory_t memory;
         std::array<uint8_t, 16> v;  // data registers
 
-        uint16_t program_counter;
-        uint16_t index_register;
+        memory_t::iterator pc;
+        memory_t::iterator index;
 
-        uint8_t delay_timer;
-        uint8_t sound_timer;
+        uint8_t delayTimer;
+        uint8_t soundTimer;
 
         std::array<bool, 16> keypad;
         bool running;
