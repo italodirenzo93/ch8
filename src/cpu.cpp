@@ -6,6 +6,26 @@
 #include "log.hpp"
 #include "Exception.hpp"
 
+static const std::array<uint8_t, 80> fontData{
+    // 4x5 font sprites (0-F)
+    0xF0, 0x90, 0x90, 0x90, 0xF0,
+    0x20, 0x60, 0x20, 0x20, 0x70,
+    0xF0, 0x10, 0xF0, 0x80, 0xF0,
+    0xF0, 0x10, 0xF0, 0x10, 0xF0,
+    0xA0, 0xA0, 0xF0, 0x20, 0x20,
+    0xF0, 0x80, 0xF0, 0x10, 0xF0,
+    0xF0, 0x80, 0xF0, 0x90, 0xF0,
+    0xF0, 0x10, 0x20, 0x40, 0x40,
+    0xF0, 0x90, 0xF0, 0x90, 0xF0,
+    0xF0, 0x90, 0xF0, 0x10, 0xF0,
+    0xF0, 0x90, 0xF0, 0x90, 0x90,
+    0xE0, 0x90, 0xE0, 0x90, 0xE0,
+    0xF0, 0x80, 0x80, 0x80, 0xF0,
+    0xE0, 0x90, 0x90, 0x90, 0xE0,
+    0xF0, 0x80, 0xF0, 0x80, 0xF0,
+    0xF0, 0x80, 0xF0, 0x80, 0x80,
+};
+
 namespace ch8
 {
 
@@ -18,7 +38,9 @@ namespace ch8
         pc(memory.begin() + ProgramOffset),
         index(memory.begin()),
         delayTimer(0),
+        delayTimerMs(0.0f),
         soundTimer(0),
+        soundTimerMs(0.0f),
         keypad(),
         running(false) {}
 
@@ -30,7 +52,9 @@ namespace ch8
         pc(memory.begin() + ProgramOffset),
         index(memory.begin()),
         delayTimer(0),
+        delayTimerMs(0.0f),
         soundTimer(0),
+        soundTimerMs(0.0f),
         keypad(),
         running(false) {}
 
@@ -53,9 +77,23 @@ namespace ch8
         return pixel != 0;
     }
 
+    Cpu::opcode_t Cpu::GetNextOpcode() const noexcept
+    {
+        // If the loaded program has exited, return 0
+        if (pc == program.second) {
+            return 0;
+        }
+
+        // Grab the next opcode from the next 2 bytes
+        const uint8_t msb = *pc;
+        const uint8_t lsb = *(pc + 1);
+
+        return msb << 8 | lsb;
+    }
+
     Cpu::opcode_handler_t Cpu::GetOpcodeHandler(const opcode_t& opcode) const noexcept
     {
-        auto iter = opcodeTable.find(opcode);
+        const auto iter = opcodeTable.find(opcode);
         if (iter == opcodeTable.end()) {
             return nullptr;
         }
@@ -74,14 +112,37 @@ namespace ch8
         stack = std::make_pair(memory.begin() + StackOffset, memory.begin() + DisplayOffset);
         display = std::make_pair(memory.begin() + DisplayOffset, memory.end());
 
+        // Load font data into memory
+        auto itA = fontData.begin();
+        auto itB = font.first;
+        for (; itA != fontData.end() && itB != font.second; itA++, itB++) {
+            *itB = *itA;
+        }
+
         pc = program.first;
         index = memory.begin();
         stackPointer = stack.first;
 
         delayTimer = 0;
+        delayTimerMs = 0.0f;
+
         soundTimer = 0;
+        soundTimerMs = 0.0f;
 
         keypad.fill(false);
+        running = false;
+    }
+
+    void Cpu::Start()
+    {
+        if (pc == program.second) {
+            throw Exception("Cannot start because program has exited");
+        }
+        running = true;
+    }
+
+    void Cpu::Stop() noexcept
+    {
         running = false;
     }
 
@@ -145,8 +206,44 @@ namespace ch8
         opcodeTable[opcode] = handler;
     }
 
-    void Cpu::ClockCycle(float elapsed)
+    bool Cpu::ClockCycle(float elapsed)
     {
+        // Check if running
+        if (!running) {
+            throw Exception("CHIP-8 CPU is not running");
+        }
+
+        // Grab the next opcode
+        const opcode_t opcode = GetNextOpcode();
+        if (opcode == 0) {
+            return false;
+        }
+        const opcode_handler_t& handler = opcodeTable.at(opcode);
+
+        // Execute the handler for this clock cycle's opcode
+        const int result = handler(*this, opcode);
+
+        // Set the PC to the next instruction
+        pc += 2;
+
+        // Update the timers
+        if (delayTimer != 0) {
+            delayTimerMs += elapsed;
+            if (delayTimerMs >= TimerFrequency) {
+                delayTimer--;
+                delayTimerMs = 0.0f;
+            }
+        }
+
+        if (soundTimer != 0) {
+            soundTimerMs += elapsed;
+            if (soundTimerMs >= TimerFrequency) {
+                soundTimer--;
+                soundTimerMs = 0.0f;
+            }
+        }
+
+        return true;
     }
 
 }

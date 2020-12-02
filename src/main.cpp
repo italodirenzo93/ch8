@@ -64,22 +64,30 @@ int main(int argc, char* argv[])
         ch8::Cpu cpu;
         cpu.LoadRomFromFile("test_opcode.ch8");
 
+        cpu.Start();
         while (running) {
             WindowMessageLoop();
+
+            if (cpu.IsRunning()) {
+                cpu.ClockCycle(0.0f);
+            }
         }
 
         Cleanup();
     }
     catch (const ch8::Exception& e) {
         std::cerr << "CHIP-8 error : " << e.what() << std::endl;
+        Cleanup();
         return EXIT_FAILURE;
     }
     catch (const std::exception& e) {
         std::cerr << "Fatal error: " << e.what() << std::endl;
+        Cleanup();
         return EXIT_FAILURE;
     }
     catch (...) {
         std::cerr << "Unknown fatal error..." << std::endl;
+        Cleanup();
         return EXIT_FAILURE;
     }
 

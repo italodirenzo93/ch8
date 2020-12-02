@@ -29,14 +29,17 @@ namespace ch8
         // Accessors
         bool IsRunning() const noexcept;
         bool GetPixel(int x, int y) const;
+        opcode_t GetNextOpcode() const noexcept;
         opcode_handler_t GetOpcodeHandler(const opcode_t& opcode) const noexcept;
 
         // Mutators
         void Reset() noexcept;
+        void Start();
+        void Stop() noexcept;
         void LoadRomFromFile(const char* filename);
         void SetPixel(int x, int y, bool on);
         void SetOpcodeHandler(const opcode_t& opcode, const opcode_handler_t& handler);
-        void ClockCycle(float elapsed);
+        bool ClockCycle(float elapsed);
 
         // Constants
         static constexpr uint32_t MaxProgramSize = 3232;
@@ -45,6 +48,7 @@ namespace ch8
         static constexpr uint16_t DisplayOffset = 0;
         static constexpr int DisplayWidth = 64;
         static constexpr int DisplayHeight = 32;
+        static constexpr float TimerFrequency = 16.666f;
 
     private:
         // Types
@@ -67,7 +71,10 @@ namespace ch8
         memory_t::iterator stackPointer;
 
         uint8_t delayTimer;
+        float delayTimerMs;
+
         uint8_t soundTimer;
+        float soundTimerMs;
 
         std::array<bool, 16> keypad;
         bool running;
