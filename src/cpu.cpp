@@ -1,12 +1,13 @@
 #include "cpu.hpp"
 
-#include <sstream>
-#include <fstream>
+#include <cstdio>
 
-#include "log.hpp"
+#include "Log.hpp"
 #include "Exception.hpp"
 
-static const std::array<uint8_t, 80> fontData{
+// Font data
+static constexpr int FontSize = 80;
+static const uint8_t FontData[] = {
     // 4x5 font sprites (0-F)
     0xF0, 0x90, 0x90, 0x90, 0xF0,
     0x20, 0x60, 0x20, 0x20, 0x70,
@@ -31,32 +32,15 @@ namespace ch8
 
     // Constructors
     Cpu::Cpu() noexcept
-        :
-        opcodeTable(),
-        memory(),
-        v(),
-        pc(memory.begin() + ProgramOffset),
-        index(memory.begin()),
-        delayTimer(0),
-        delayTimerMs(0.0f),
-        soundTimer(0),
-        soundTimerMs(0.0f),
-        keypad(),
-        running(false) {}
+    {
+        Reset();
+    }
 
     Cpu::Cpu(const std::map<opcode_t, opcode_handler_t>& opcodes) noexcept
-        :
-        opcodeTable(opcodes),
-        memory(),
-        v(),
-        pc(memory.begin() + ProgramOffset),
-        index(memory.begin()),
-        delayTimer(0),
-        delayTimerMs(0.0f),
-        soundTimer(0),
-        soundTimerMs(0.0f),
-        keypad(),
-        running(false) {}
+        : opcodeTable(opcodes)
+    {
+        Reset();
+    }
 
     Cpu::~Cpu() noexcept {}
 
@@ -72,7 +56,7 @@ namespace ch8
         int byteIndex = index / 8;
         int offset = index % 8;
 
-        int pixel = *(display.first + offset) & (0x80 >> offset);
+        int pixel = display[byteIndex] & (0x80 >> offset);
 
         return pixel != 0;
     }
@@ -80,13 +64,13 @@ namespace ch8
     Cpu::opcode_t Cpu::GetNextOpcode() const noexcept
     {
         // If the loaded program has exited, return 0
-        if (pc == program.second) {
+        if (memory[pc] == 0) {
             return 0;
         }
 
         // Grab the next opcode from the next 2 bytes
-        const uint8_t msb = *pc;
-        const uint8_t lsb = *(pc + 1);
+        const uint8_t msb = memory[pc];
+        const uint8_t lsb = memory[pc + 1];
 
         return msb << 8 | lsb;
     }
@@ -104,40 +88,37 @@ namespace ch8
     // Mutators
     void Cpu::Reset() noexcept
     {
-        memory.fill(0);
-        v.fill(0);
+        // Initialize all memory to 0
+        memset(this->memory, 0, TotalMemory);
 
-        font = std::make_pair(memory.begin(), memory.begin() + ProgramOffset);
-        program = std::make_pair(memory.begin() + ProgramOffset, memory.begin() + StackOffset);
-        stack = std::make_pair(memory.begin() + StackOffset, memory.begin() + DisplayOffset);
-        display = std::make_pair(memory.begin() + DisplayOffset, memory.end());
+        // Font data sits at beginning
+        memcpy(this->memory, FontData, FontSize);
 
-        // Load font data into memory
-        auto itA = fontData.begin();
-        auto itB = font.first;
-        for (; itA != fontData.end() && itB != font.second; itA++, itB++) {
-            *itB = *itA;
+        // Stack sits at offset 0xEA0-0xEFF
+        this->stack = (uint16_t*)(this->memory + StackOffset);
+
+        // Display refresh sits at 0xF00-0xFFF
+        this->display = (this->memory + DisplayOffset);
+
+        this->index = 0;
+        this->pc = ProgramOffset;
+        this->stackPointer = 0;
+        this->running = false;
+
+        this->delayTimer = 0;
+        this->delayTimerMs = 0.0f;
+
+        this->soundTimer = 0;
+        this->soundTimerMs = 0.0f;
+
+        for (int i = 0; i < 16; i++) {
+            keypad[i] = false;
         }
-
-        pc = program.first;
-        index = memory.begin();
-        stackPointer = stack.first;
-
-        delayTimer = 0;
-        delayTimerMs = 0.0f;
-
-        soundTimer = 0;
-        soundTimerMs = 0.0f;
-
-        keypad.fill(false);
         running = false;
     }
 
-    void Cpu::Start()
+    void Cpu::Start() noexcept
     {
-        if (pc == program.second) {
-            throw Exception("Cannot start because program has exited");
-        }
         running = true;
     }
 
@@ -151,55 +132,51 @@ namespace ch8
         log::debug("Loading ROM file %s...", filename);
 
         // Open the ROM file for reading
-        std::ifstream ifs(filename, std::ios::binary | std::ios::ate);
-
-        const int size = static_cast<int>(ifs.tellg());
-        ifs.seekg(0, std::ios::beg);
-
-        if (size == -1) {
-            std::ostringstream oss;
-            oss << "ROM file " << filename << " not found" << std::endl;
-            throw Exception(oss.str());
+        size_t len = 0;
+        FILE* f = fopen(filename, "rb");
+        if (f == nullptr) {
+            throw Exception("Could not open file %s...");
         }
 
-        if (size > MaxProgramSize) {
-            std::ostringstream oss;
-            oss << "File size too large (" << size << " bytes)" << std::endl;
-            throw Exception(oss.str());
+        // get file size
+        fseek(f, 0, SEEK_END);
+        len = ftell(f);
+        rewind(f);
+        if (len > MaxProgramSize) {
+            fclose(f);
+            throw Exception("File size too large (%zu bytes)");
         }
 
-        // Iterators for program memory range
-        auto programStartIter = memory.begin() + ProgramOffset;
-        auto programEndIter = programStartIter + MaxProgramSize;
+        memset(this->memory + ProgramOffset, 0, MaxProgramSize);
+        fread(this->memory + ProgramOffset, sizeof(uint8_t), len, f);
 
-        // Start by initializing the program range in memory to 0
-        std::fill(programStartIter, programEndIter, 0);
-
-        // Load the ROM into memory
-        auto iter = programStartIter;
-        while (ifs.good()) {
-            ifs >> *iter;
-            iter++;
-        }
+        fclose(f);
     }
 
     void Cpu::SetPixel(int x, int y, bool on)
     {
-        int index = y * DisplayWidth + x;
-        int byteIndex = index / 8;
-        int offset = index % 8;
-        auto byte = display.first + offset;
+        if ((x < 0 || x > DisplayWidth) && (y < 0 || y > DisplayHeight)) {
+            throw Exception("X/Y coordinates must be within the DisplayWidth and DisplayHeight");
+        }
+
+        const int index = y * DisplayWidth + x;
+        const int byteIndex = index / 8;
+        const int offset = index % 8;
+        uint8_t byte = display[byteIndex];
 
         if (on) {
-            *byte = *byte | (0x80 >> offset);
+            byte = byte | (0x80 >> offset);
         }
         else {
-            *byte = *byte & (~(0x80 >> offset));
+            byte = byte & (~(0x80 >> offset));
         }
+
+        display[byteIndex] = byte;
     }
 
     void Cpu::SetOpcodeHandler(const opcode_t& opcode, const opcode_handler_t& handler)
     {
+        // TODO: implement this
         if (true) {
             throw Exception("Invalid opcode");
         }
@@ -218,10 +195,17 @@ namespace ch8
         if (opcode == 0) {
             return false;
         }
-        const opcode_handler_t& handler = opcodeTable.at(opcode);
+
+        opcode_handler_t* handler = nullptr;
+        try {
+            handler = &opcodeTable.at(opcode);
+        }
+        catch (const std::out_of_range& e) {
+            throw Exception("Unknown opcode");
+        }
 
         // Execute the handler for this clock cycle's opcode
-        const int result = handler(*this, opcode);
+        const int result = (*handler)(this, opcode);
 
         // Set the PC to the next instruction
         pc += 2;

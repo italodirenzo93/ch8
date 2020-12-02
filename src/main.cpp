@@ -1,4 +1,4 @@
-#include <iostream>
+#include <cstdio>
 
 #include <SDL.h>
 
@@ -56,7 +56,7 @@ static void WindowMessageLoop()
 
 int main(int argc, char* argv[])
 {
-    std::cout << "Hello World!\n";
+    printf("Hello World!\n");
 
     try {
         Initialize();
@@ -76,17 +76,17 @@ int main(int argc, char* argv[])
         Cleanup();
     }
     catch (const ch8::Exception& e) {
-        std::cerr << "CHIP-8 error : " << e.what() << std::endl;
+        fprintf(stderr, "CHIP-8 error : %s\n", e.what());
         Cleanup();
         return EXIT_FAILURE;
     }
     catch (const std::exception& e) {
-        std::cerr << "Fatal error: " << e.what() << std::endl;
+        fprintf(stderr, "Fatal error : %s\n", e.what());
         Cleanup();
         return EXIT_FAILURE;
     }
     catch (...) {
-        std::cerr << "Unknown fatal error..." << std::endl;
+        fprintf(stderr, "Unknown fatal error...\n");
         Cleanup();
         return EXIT_FAILURE;
     }

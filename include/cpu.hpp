@@ -16,7 +16,7 @@ namespace ch8
     public:
         // Types
         using opcode_t = uint16_t;
-        using opcode_handler_t = std::function<int(Cpu&, opcode_t)>;
+        using opcode_handler_t = std::function<int(Cpu*, opcode_t)>;
 
         // Constructors
         Cpu() noexcept;
@@ -34,7 +34,7 @@ namespace ch8
 
         // Mutators
         void Reset() noexcept;
-        void Start();
+        void Start() noexcept;
         void Stop() noexcept;
         void LoadRomFromFile(const char* filename);
         void SetPixel(int x, int y, bool on);
@@ -42,33 +42,33 @@ namespace ch8
         bool ClockCycle(float elapsed);
 
         // Constants
+        static constexpr int TotalMemory = 4096;
         static constexpr uint32_t MaxProgramSize = 3232;
+
         static constexpr uint16_t ProgramOffset = 0x200;
-        static constexpr uint16_t StackOffset = 0;
-        static constexpr uint16_t DisplayOffset = 0;
+        static constexpr uint16_t StackOffset = 0xEA0;
+        static constexpr uint16_t DisplayOffset = 0xF00;
+
         static constexpr int DisplayWidth = 64;
         static constexpr int DisplayHeight = 32;
+
         static constexpr float TimerFrequency = 16.666f;
 
     private:
-        // Types
-        using memory_t = std::array<uint8_t, 4096>;
-        using memory_range_t = std::pair<memory_t::iterator, memory_t::iterator>;
-
         // Data
         std::map<opcode_t, opcode_handler_t> opcodeTable;
 
-        memory_t memory;
-        memory_range_t font;
-        memory_range_t program;
-        memory_range_t stack;
-        memory_range_t display;
+        uint8_t memory[TotalMemory];
+        uint8_t* font;
+        uint8_t* program;
+        uint16_t* stack;
+        uint8_t* display;
 
-        std::array<uint8_t, 16> v;  // data registers
+        uint8_t v[16];  // data registers
 
-        memory_t::iterator pc;
-        memory_t::iterator index;
-        memory_t::iterator stackPointer;
+        uint16_t pc;
+        uint16_t index;
+        uint16_t stackPointer;
 
         uint8_t delayTimer;
         float delayTimerMs;
@@ -76,7 +76,7 @@ namespace ch8
         uint8_t soundTimer;
         float soundTimerMs;
 
-        std::array<bool, 16> keypad;
+        bool keypad[16];
         bool running;
     };
 
