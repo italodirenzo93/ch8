@@ -3,8 +3,12 @@ cmake_minimum_required(VERSION 3.10)
 # set the project name
 project(ch8 CXX)
 set(CMAKE_CXX_STANDARD_REQUIRED 11)
-set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ /EHsc")
+set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
+
+if (MSVC)
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+endif()
 
 # SDL2
 if (WIN32)

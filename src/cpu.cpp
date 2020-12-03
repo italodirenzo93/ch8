@@ -29,20 +29,15 @@ static const uint8_t FontData[] = {
 
 namespace ch8
 {
-
     // Constructors
     Cpu::Cpu() noexcept
     {
         Reset();
     }
 
-    Cpu::Cpu(const std::map<opcode_t, opcode_handler_t>& opcodes) noexcept
-        : opcodeTable(opcodes)
+    Cpu::~Cpu() noexcept
     {
-        Reset();
     }
-
-    Cpu::~Cpu() noexcept {}
 
     // Accessors
     bool Cpu::IsRunning() const noexcept
@@ -75,16 +70,6 @@ namespace ch8
         return msb << 8 | lsb;
     }
 
-    Cpu::opcode_handler_t Cpu::GetOpcodeHandler(const opcode_t& opcode) const noexcept
-    {
-        const auto iter = opcodeTable.find(opcode);
-        if (iter == opcodeTable.end()) {
-            return nullptr;
-        }
-
-        return iter->second;
-    }
-
     // Mutators
     void Cpu::Reset() noexcept
     {
@@ -93,6 +78,8 @@ namespace ch8
 
         // Font data sits at beginning
         memcpy(this->memory, FontData, FontSize);
+        this->font = this->memory;
+        this->program = this->memory + ProgramOffset;
 
         // Stack sits at offset 0xEA0-0xEFF
         this->stack = (uint16_t*)(this->memory + StackOffset);
@@ -147,8 +134,8 @@ namespace ch8
             throw Exception("File size too large (%zu bytes)");
         }
 
-        memset(this->memory + ProgramOffset, 0, MaxProgramSize);
-        fread(this->memory + ProgramOffset, sizeof(uint8_t), len, f);
+        memset(this->program, 0, MaxProgramSize);
+        fread(this->program, sizeof(uint8_t), len, f);
 
         fclose(f);
     }
@@ -174,15 +161,6 @@ namespace ch8
         display[byteIndex] = byte;
     }
 
-    void Cpu::SetOpcodeHandler(const opcode_t& opcode, const opcode_handler_t& handler)
-    {
-        // TODO: implement this
-        if (true) {
-            throw Exception("Invalid opcode");
-        }
-        opcodeTable[opcode] = handler;
-    }
-
     bool Cpu::ClockCycle(float elapsed)
     {
         // Check if running
@@ -195,17 +173,6 @@ namespace ch8
         if (opcode == 0) {
             return false;
         }
-
-        opcode_handler_t* handler = nullptr;
-        try {
-            handler = &opcodeTable.at(opcode);
-        }
-        catch (const std::out_of_range& e) {
-            throw Exception("Unknown opcode");
-        }
-
-        // Execute the handler for this clock cycle's opcode
-        const int result = (*handler)(this, opcode);
 
         // Set the PC to the next instruction
         pc += 2;

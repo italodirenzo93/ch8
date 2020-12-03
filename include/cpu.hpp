@@ -16,11 +16,9 @@ namespace ch8
     public:
         // Types
         using opcode_t = uint16_t;
-        using opcode_handler_t = std::function<int(Cpu*, opcode_t)>;
 
         // Constructors
         Cpu() noexcept;
-        Cpu(const std::map<opcode_t, opcode_handler_t>& opcodes) noexcept;
         ~Cpu() noexcept;
 
         Cpu(const Cpu&) = delete;
@@ -30,7 +28,6 @@ namespace ch8
         bool IsRunning() const noexcept;
         bool GetPixel(int x, int y) const;
         opcode_t GetNextOpcode() const noexcept;
-        opcode_handler_t GetOpcodeHandler(const opcode_t& opcode) const noexcept;
 
         // Mutators
         void Reset() noexcept;
@@ -38,7 +35,6 @@ namespace ch8
         void Stop() noexcept;
         void LoadRomFromFile(const char* filename);
         void SetPixel(int x, int y, bool on);
-        void SetOpcodeHandler(const opcode_t& opcode, const opcode_handler_t& handler);
         bool ClockCycle(float elapsed);
 
         // Constants
@@ -56,8 +52,6 @@ namespace ch8
 
     private:
         // Data
-        std::map<opcode_t, opcode_handler_t> opcodeTable;
-
         uint8_t memory[TotalMemory];
         uint8_t* font;
         uint8_t* program;
