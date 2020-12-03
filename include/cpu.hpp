@@ -15,7 +15,10 @@ namespace ch8
     {
     public:
         // Types
+        using byte_t = uint8_t;
         using opcode_t = uint16_t;
+        using address_t = uint16_t;
+        using timer_t = uint8_t;
 
         // Constructors
         Cpu() noexcept;
@@ -26,16 +29,20 @@ namespace ch8
 
         // Accessors
         bool IsRunning() const noexcept;
-        bool GetPixel(int x, int y) const;
+        bool GetPixel(int x, int y) const noexcept;
         opcode_t GetNextOpcode() const noexcept;
 
         // Mutators
         void Reset() noexcept;
         void Start() noexcept;
         void Stop() noexcept;
-        void LoadRomFromFile(const char* filename);
-        void SetPixel(int x, int y, bool on);
-        bool ClockCycle(float elapsed);
+        bool LoadRomFromFile(const char* filename) noexcept;
+        bool SetPixel(int x, int y, bool on) noexcept;
+        bool ClockCycle(float elapsed) noexcept;
+
+        void PushAddress(address_t address) noexcept;
+        void PopAddress() noexcept;
+        address_t JumpTo(address_t address) noexcept;
 
         // Constants
         static constexpr int TotalMemory = 4096;
@@ -52,22 +59,22 @@ namespace ch8
 
     private:
         // Data
-        uint8_t memory[TotalMemory];
-        uint8_t* font;
-        uint8_t* program;
-        uint16_t* stack;
-        uint8_t* display;
+        byte_t memory[TotalMemory];
+        byte_t* font;
+        byte_t* program;
+        address_t* stack;
+        byte_t* display;
 
-        uint8_t v[16];  // data registers
+        byte_t v[16];  // data registers
 
-        uint16_t pc;
-        uint16_t index;
-        uint16_t stackPointer;
+        address_t pc;
+        address_t index;
+        byte_t stackPointer;
 
-        uint8_t delayTimer;
+        timer_t delayTimer;
         float delayTimerMs;
 
-        uint8_t soundTimer;
+        timer_t soundTimer;
         float soundTimerMs;
 
         bool keypad[16];

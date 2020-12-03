@@ -1,9 +1,8 @@
-#include "cpu.hpp"
+#include "Cpu.hpp"
 
 #include <cstdio>
 
 #include "Log.hpp"
-#include "Exception.hpp"
 
 // Font data
 static constexpr int FontSize = 80;
@@ -45,7 +44,7 @@ namespace ch8
         return running;
     }
 
-    bool Cpu::GetPixel(int x, int y) const
+    bool Cpu::GetPixel(int x, int y) const noexcept
     {
         int index = y * DisplayWidth + x;
         int byteIndex = index / 8;
@@ -64,8 +63,8 @@ namespace ch8
         }
 
         // Grab the next opcode from the next 2 bytes
-        const uint8_t msb = memory[pc];
-        const uint8_t lsb = memory[pc + 1];
+        const byte_t msb = memory[pc];
+        const byte_t lsb = memory[pc + 1];
 
         return msb << 8 | lsb;
     }
@@ -82,7 +81,7 @@ namespace ch8
         this->program = this->memory + ProgramOffset;
 
         // Stack sits at offset 0xEA0-0xEFF
-        this->stack = (uint16_t*)(this->memory + StackOffset);
+        this->stack = (address_t*)(this->memory + StackOffset);
 
         // Display refresh sits at 0xF00-0xFFF
         this->display = (this->memory + DisplayOffset);
@@ -114,7 +113,7 @@ namespace ch8
         running = false;
     }
 
-    void Cpu::LoadRomFromFile(const char* filename)
+    bool Cpu::LoadRomFromFile(const char* filename) noexcept
     {
         log::debug("Loading ROM file %s...", filename);
 
@@ -122,7 +121,7 @@ namespace ch8
         size_t len = 0;
         FILE* f = fopen(filename, "rb");
         if (f == nullptr) {
-            throw Exception("Could not open file %s...");
+            return false;
         }
 
         // get file size
@@ -131,19 +130,23 @@ namespace ch8
         rewind(f);
         if (len > MaxProgramSize) {
             fclose(f);
-            throw Exception("File size too large (%zu bytes)");
+            //throw Exception("File size too large (%zu bytes)");
+            return false;
         }
 
         memset(this->program, 0, MaxProgramSize);
-        fread(this->program, sizeof(uint8_t), len, f);
+        fread(this->program, sizeof(byte_t), len, f);
 
         fclose(f);
+
+        return true;
     }
 
-    void Cpu::SetPixel(int x, int y, bool on)
+    bool Cpu::SetPixel(int x, int y, bool on) noexcept
     {
         if ((x < 0 || x > DisplayWidth) && (y < 0 || y > DisplayHeight)) {
-            throw Exception("X/Y coordinates must be within the DisplayWidth and DisplayHeight");
+            //throw Exception("X/Y coordinates must be within the DisplayWidth and DisplayHeight");
+            return false;
         }
 
         const int index = y * DisplayWidth + x;
@@ -159,13 +162,15 @@ namespace ch8
         }
 
         display[byteIndex] = byte;
+
+        return true;
     }
 
-    bool Cpu::ClockCycle(float elapsed)
+    bool Cpu::ClockCycle(float elapsed) noexcept
     {
         // Check if running
         if (!running) {
-            throw Exception("CHIP-8 CPU is not running");
+            return false;
         }
 
         // Grab the next opcode
@@ -195,6 +200,29 @@ namespace ch8
         }
 
         return true;
+    }
+
+    void Cpu::PushAddress(address_t address) noexcept
+    {
+        stack[++stackPointer] = address;
+    }
+
+    void Cpu::PopAddress() noexcept
+    {
+        stack[stackPointer] = 0;
+        this->pc = stack[--stackPointer];
+    }
+
+    Cpu::address_t Cpu::JumpTo(address_t address) noexcept
+    {
+        if (address > MaxProgramSize) {
+            //throw std::out_of_range("Address out of program memory range");
+            return 0;
+        }
+
+        this->pc = address;
+
+        return pc;
     }
 
 }

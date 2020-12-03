@@ -2,20 +2,18 @@
 
 #include <SDL.h>
 
-#include "log.hpp"
-#include "cpu.hpp"
-#include "Exception.hpp"
+#include "Log.hpp"
+#include "Cpu.hpp"
 
 SDL_Window* window = nullptr;
 SDL_Event ev = { 0 };
 static bool running = true;
 
-static void Initialize()
+static bool Initialize()
 {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
-        std::string msg = "SDL failed to initialize: ";
-        msg += SDL_GetError();
-        throw ch8::Exception(msg);
+        ch8::log::critical("SDL failed to initialize : %s", SDL_GetError());
+        return false;
     }
 
     window = SDL_CreateWindow(
@@ -26,12 +24,13 @@ static void Initialize()
     );
 
     if (window == nullptr) {
-        std::string msg = "Failed to create window: ";
-        msg += SDL_GetError();
-        throw ch8::Exception(msg);
+        ch8::log::critical("Failed to create SDL Window : %s", SDL_GetError());
+        return false;
     }
 
     ch8::log::init();
+
+    return true;
 }
 
 static void Cleanup()
@@ -56,39 +55,40 @@ static void WindowMessageLoop()
 
 int main(int argc, char* argv[])
 {
-    printf("Hello World!\n");
+    atexit(Cleanup);
 
-    try {
-        Initialize();
+    if (!Initialize()) {
+        fprintf(stderr, "Unable to initialize the application\n");
+        return EXIT_FAILURE;
+    }
 
-        ch8::Cpu cpu;
-        cpu.LoadRomFromFile("test_opcode.ch8");
+    ch8::Cpu cpu;
 
-        cpu.Start();
-        while (running) {
-            WindowMessageLoop();
+    if (!cpu.LoadRomFromFile("test_opcode.ch8")) {
+        ch8::log::critical("Could not load ROM %s...", "test_opcode.ch8");
+        return EXIT_FAILURE;
+    }
 
-            if (cpu.IsRunning()) {
-                cpu.ClockCycle(0.0f);
+    cpu.Start();
+    while (running) {
+        WindowMessageLoop();
+
+        if (cpu.IsRunning()) {
+            ch8::Cpu::opcode_t opcode = cpu.GetNextOpcode();
+
+            switch (opcode) {
+            case 0x00EE:
+                cpu.PopAddress();
+                break;
+            case 0x001E:
+                cpu.JumpTo(0xDE);
+                break;
+            default:
+                ch8::log::error("Unrecognized opcode %X", opcode);
+                cpu.Stop();
+                break;
             }
         }
-
-        Cleanup();
-    }
-    catch (const ch8::Exception& e) {
-        fprintf(stderr, "CHIP-8 error : %s\n", e.what());
-        Cleanup();
-        return EXIT_FAILURE;
-    }
-    catch (const std::exception& e) {
-        fprintf(stderr, "Fatal error : %s\n", e.what());
-        Cleanup();
-        return EXIT_FAILURE;
-    }
-    catch (...) {
-        fprintf(stderr, "Unknown fatal error...\n");
-        Cleanup();
-        return EXIT_FAILURE;
     }
 
     return EXIT_SUCCESS;
