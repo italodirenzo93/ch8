@@ -97,9 +97,6 @@ namespace ch8
         this->soundTimer = 0;
         this->soundTimerMs = 0.0f;
 
-        for (int i = 0; i < 16; i++) {
-            keypad[i] = false;
-        }
         running = false;
     }
 

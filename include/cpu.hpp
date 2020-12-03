@@ -77,7 +77,6 @@ namespace ch8
         timer_t soundTimer;
         float soundTimerMs;
 
-        bool keypad[16];
         bool running;
     };
 

@@ -4,10 +4,14 @@
 
 #include "Log.hpp"
 #include "Cpu.hpp"
+#include "Keypad.hpp"
 
 SDL_Window* window = nullptr;
 SDL_Event ev = { 0 };
 static bool running = true;
+
+ch8::Cpu cpu;
+ch8::Keypad keypad;
 
 static bool Initialize()
 {
@@ -49,6 +53,12 @@ static void WindowMessageLoop()
         case SDL_QUIT:
             running = false;
             break;
+        case SDL_KEYDOWN:
+            keypad.SetKeyDown(ch8::Key::One);
+            break;
+        case SDL_KEYUP:
+            keypad.SetKeyUp(ch8::Key::One);
+            break;
         }
     }
 }
@@ -61,8 +71,6 @@ int main(int argc, char* argv[])
         fprintf(stderr, "Unable to initialize the application\n");
         return EXIT_FAILURE;
     }
-
-    ch8::Cpu cpu;
 
     if (!cpu.LoadRomFromFile("test_opcode.ch8")) {
         ch8::log::critical("Could not load ROM %s...", "test_opcode.ch8");
