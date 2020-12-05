@@ -11,7 +11,7 @@ extern "C"
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 320
 
-int ch8_displayInit();
+int ch8_displayInit(void* handle);
 void ch8_displayQuit();
 void ch8_displayClear();
 void ch8_displayPresent(const ch8_cpu *cpu);

@@ -7,38 +7,22 @@
 #include "keyboard.h"
 #include "log.h"
 
-static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static SDL_Texture *display = NULL;
 static SDL_PixelFormat *pixelFormat = NULL;
 
-static SDL_Event event;
 static bool initialized = false;
 
 #define INIT_CHECK() if (!initialized) return
 
-int ch8_displayInit()
+int ch8_displayInit(void* handle)
 {
-    if (initialized)
-    {
+    if (initialized) {
         log_info("Display sub-system already initialized\n");
         return 1; // designate some kind of error code
     }
 
-    if (SDL_Init(SDL_INIT_VIDEO) != 0)
-    {
-        log_error("Unable to initialize SDL: %s\n", SDL_GetError());
-        return 1;
-    }
-
-    window = SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
-    if (window == NULL)
-    {
-        log_error("Failed to create window: %s\n", SDL_GetError());
-        return 1;
-    }
-
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    renderer = SDL_CreateRenderer((SDL_Window*)window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (renderer == NULL)
     {
         log_error("Failed to create renderer: %s\n", SDL_GetError());
