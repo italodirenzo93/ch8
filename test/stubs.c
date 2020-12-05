@@ -23,23 +23,23 @@ void log_debug(const char* fmt, ...)
 {
 }
 
-int await_keypress(ch8_cpu* cpu, input_key* key)
+int ch8_awaitKeyPress(ch8_cpu* cpu, ch8_key* key)
 {
     cpu->keypad[KEY_2] = true;
     (*key) = KEY_2;
     return 0;
 }
 
-bool is_key_up(const ch8_cpu* cpu, input_key key)
+bool ch8_isKeyUp(const ch8_cpu* cpu, ch8_key key)
 {
     return false;
 }
 
-bool is_key_down(const ch8_cpu* cpu, input_key key)
+bool ch8_isKeyDown(const ch8_cpu* cpu, ch8_key key)
 {
     return false;
 }
 
-void display_write_fb()
+void ch8_displayWriteFb()
 {
 }

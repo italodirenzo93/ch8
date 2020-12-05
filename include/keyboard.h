@@ -1,12 +1,17 @@
-#ifndef __INPUT__
-#define __INPUT__
+#ifndef __KEYBOARD_H__
+#define __KEYBOARD_H__
 
 #include <stdbool.h>
 #include <SDL_keyboard.h>
 
 #include "ch8_cpu.h"
 
-typedef enum input_key
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+typedef enum ch8_key
 {
     KEY_UNKNOWN = 0xFF,
     KEY_0 = 0x0,
@@ -25,16 +30,20 @@ typedef enum input_key
     KEY_D = 0xD,
     KEY_E = 0xE,
     KEY_F = 0xF,
-} input_key;
+} ch8_key;
 
-input_key sdl_keycode_to_key_register(SDL_Keycode keycode);
+ch8_key sdl_keycode_to_key_register(SDL_Keycode keycode);
 
-bool is_key_down(const ch8_cpu *cpu, input_key key);
-bool is_key_up(const ch8_cpu *cpu, input_key key);
+bool ch8_isKeyDown(const ch8_cpu *cpu, ch8_key key);
+bool ch8_isKeyUp(const ch8_cpu *cpu, ch8_key key);
 
-void set_key_down(ch8_cpu *cpu, input_key key);
-void set_key_up(ch8_cpu *cpu, input_key key);
+void ch8_setKeyDown(ch8_cpu *cpu, ch8_key key);
+void ch8_setKeyUp(ch8_cpu *cpu, ch8_key key);
 
-int await_keypress(ch8_cpu *cpu, input_key *key);
+int ch8_awaitKeyPress(ch8_cpu *cpu, ch8_key *key);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

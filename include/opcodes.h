@@ -1,7 +1,12 @@
-#ifndef __OPCODES__
-#define __OPCODES__
+#ifndef __OPCODES_H__
+#define __OPCODES_H__
 
 #include "ch8_cpu.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 void ch8_op_return(ch8_cpu *cpu);
 void ch8_op_jumpto(ch8_cpu *cpu, uint16_t opcode);
@@ -53,5 +58,9 @@ void ch8_op_store_bcd_of_vx(ch8_cpu *cpu, uint16_t opcode);
 void ch8_op_store_v0_to_vx(ch8_cpu *cpu, uint16_t opcode);
 // 0xFX65
 void ch8_op_fill_v0_to_vx(ch8_cpu *cpu, uint16_t opcode);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

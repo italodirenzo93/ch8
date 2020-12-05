@@ -27,7 +27,7 @@ void ch8_op_return(ch8_cpu* cpu)
     assert(cpu != NULL);
     log_debug("[00EE] - Return from sub-routine");
 
-    cpu->program_counter = cpu->stack[--cpu->stack_pointer];
+    cpu->programCounter = cpu->stack[--cpu->stackPointer];
 }
 
 // 0x1NNN
@@ -36,7 +36,7 @@ void ch8_op_jumpto(ch8_cpu* cpu, uint16_t opcode)
     assert(cpu != NULL);
     const uint16_t addr = opcode & 0x0FFF;
     log_debug("[1NNN] - Jump to address %X", addr);
-    cpu->program_counter = addr;
+    cpu->programCounter = addr;
 }
 
 // 0x2NNN
@@ -47,8 +47,8 @@ void ch8_op_callsub(ch8_cpu *cpu, uint16_t opcode)
     const uint16_t addr = opcode & 0x0FFF;
     log_debug("[2NNN] - Call subroutine at address %X", addr);
 
-    cpu->stack[cpu->stack_pointer++] = cpu->program_counter;
-    cpu->program_counter = addr;
+    cpu->stack[cpu->stackPointer++] = cpu->programCounter;
+    cpu->programCounter = addr;
 }
 
 // 0x3XKK
@@ -61,7 +61,7 @@ void ch8_op_cond_eq(ch8_cpu *cpu, uint16_t opcode)
     if (cpu->V[x] == operand)
     {
         // Skip the next instruction
-        cpu->program_counter += CH8_PC_STEP_SIZE;
+        cpu->programCounter += CH8_PC_STEP_SIZE;
     }
 }
 
@@ -75,7 +75,7 @@ void ch8_op_cond_neq(ch8_cpu *cpu, uint16_t opcode)
     if (cpu->V[x] != operand)
     {
         // Skip the next instruction
-        cpu->program_counter += CH8_PC_STEP_SIZE;
+        cpu->programCounter += CH8_PC_STEP_SIZE;
     }
 }
 
@@ -89,7 +89,7 @@ void ch8_op_cond_vx_eq_vy(ch8_cpu *cpu, uint16_t opcode)
     if (cpu->V[x] == cpu->V[y])
     {
         // Skip the next instruction
-        cpu->program_counter += CH8_PC_STEP_SIZE;
+        cpu->programCounter += CH8_PC_STEP_SIZE;
     }
 }
 
@@ -248,7 +248,7 @@ void ch8_op_cond_vx_neq_vy(ch8_cpu* cpu, uint16_t opcode)
     if (cpu->V[x] != cpu->V[y])
     {
         // Skip the next instruction
-        cpu->program_counter += CH8_PC_STEP_SIZE;
+        cpu->programCounter += CH8_PC_STEP_SIZE;
     }
 }
 
@@ -258,7 +258,7 @@ void ch8_op_set_addr(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
     const uint16_t addr = opcode & 0x0FFF;
     log_debug("[ANNN] - SET I = %d\n", addr);
-    cpu->index_register = addr;
+    cpu->index = addr;
 }
 
 // 0xBNNN
@@ -267,7 +267,7 @@ void ch8_jump_to_addr_plus_v0(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
     const uint16_t addr = opcode & 0x0FFF;
     log_debug("JUMP to %d + V[0]\n", addr);
-    cpu->program_counter = addr + cpu->V[0];
+    cpu->programCounter = addr + cpu->V[0];
 }
 
 // 0xCNNN
@@ -305,24 +305,24 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
     cpu->V[0xF] = 0;
 
     for (int y = startY; y < endY; y++) {
-        uint8_t spriteByte = cpu->memory[cpu->index_register + (y - startY)];
+        uint8_t spriteByte = cpu->memory[cpu->index + (y - startY)];
         for (int x = startX; x < endX; x++) {
             // NOTE: spritePixel and screenPixel are 0 or non-zero
             // not 0 or 1 !!!
             int spritePixel = spriteByte & (0x80 >> (x - startX));
-            int screenPixel = ch8_get_pixel(cpu, x, y);
+            int screenPixel = ch8_getPixel(cpu, x, y);
 
             if(spritePixel) {
                 if(screenPixel) {
                  cpu->V[0xF] = 1;
                 }
 
-                ch8_set_pixel(cpu, x, y, screenPixel == 0 ? true : false);
+                ch8_setPixel(cpu, x, y, screenPixel == 0 ? true : false);
             }
         }
     }
 
-    display_write_fb(cpu);
+    ch8_displayWriteFb(cpu);
 
     log_debug("[DXYN] - Draw X: %d, Y: %d, N: %d", cpu->V[x], cpu->V[y], n);
 }
@@ -331,10 +331,10 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_keyop_eq(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
-    const input_key key = (input_key) ((opcode & 0x0F00) >> 8);
+    const ch8_key key = (ch8_key) ((opcode & 0x0F00) >> 8);
     log_debug("KEY check if keypad[%d] is down\n", key);
-    if (is_key_down(cpu, key)) {
-        cpu->program_counter += CH8_PC_STEP_SIZE;
+    if (ch8_isKeyDown(cpu, key)) {
+        cpu->programCounter += CH8_PC_STEP_SIZE;
     }
 }
 
@@ -342,10 +342,10 @@ void ch8_op_keyop_eq(ch8_cpu *cpu, uint16_t opcode)
 void ch8_op_keyop_neq(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
-    const input_key key = (input_key) ((opcode & 0x0F00) >> 8);
+    const ch8_key key = (ch8_key) ((opcode & 0x0F00) >> 8);
     log_debug("KEY check if keypad[%d] is up\n", key);
-    if (is_key_up(cpu, key)) {
-        cpu->program_counter += CH8_PC_STEP_SIZE;
+    if (ch8_isKeyUp(cpu, key)) {
+        cpu->programCounter += CH8_PC_STEP_SIZE;
     }
 }
 
@@ -354,8 +354,8 @@ void ch8_op_set_vx_to_delay_timer(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
     const uint16_t x = (opcode & 0x0F00) >> 8;
-    cpu->V[x] = cpu->delay_timer;
-    log_debug("TIMER set V[%d] = delay timer val %d", x, cpu->delay_timer);
+    cpu->V[x] = cpu->delayTimer;
+    log_debug("TIMER set V[%d] = delay timer val %d", x, cpu->delayTimer);
 }
 
 // 0xFX0A
@@ -366,8 +366,8 @@ void ch8_op_await_keypress(ch8_cpu *cpu, uint16_t opcode)
 
     const uint16_t x = (opcode & 0x0F00) >> 8;
 
-    input_key key;
-    if (await_keypress(cpu, &key) != 0) {
+    ch8_key key;
+    if (ch8_awaitKeyPress(cpu, &key) != 0) {
         log_error("Error awaiting keypress");
         return;
     }
@@ -383,9 +383,9 @@ void ch8_op_set_delay_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
 
     const uint16_t x = (opcode & 0x0F00) >> 8;
-    cpu->delay_timer = cpu->V[x];
+    cpu->delayTimer = cpu->V[x];
 
-    log_debug("TIMER set delay timer to V[%d] (%d)", x, cpu->delay_timer);
+    log_debug("TIMER set delay timer to V[%d] (%d)", x, cpu->delayTimer);
 }
 
 // 0xFX18
@@ -394,9 +394,9 @@ void ch8_op_set_sound_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
 
     const uint16_t x = (opcode & 0x0F00) >> 8;
-    cpu->sound_timer = cpu->V[x];
+    cpu->soundTimer = cpu->V[x];
 
-    log_debug("SOUND set sound timer to V[%d] (%d)", x, cpu->sound_timer);
+    log_debug("SOUND set sound timer to V[%d] (%d)", x, cpu->soundTimer);
 }
 
 // 0xFX1E
@@ -404,7 +404,7 @@ void ch8_op_add_vx_to_I(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
     const uint16_t x = (opcode & 0x0F00) >> 8;
-    cpu->index_register += cpu->V[x];
+    cpu->index += cpu->V[x];
     log_debug("[FX1E] - ADD I += V[%d]", x);
 }
 
@@ -413,7 +413,7 @@ void ch8_op_set_I_to_sprite_addr(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
     const uint8_t x = (opcode & 0x0F00) >> 8;
-    cpu->index_register = cpu->V[x] * 5;
+    cpu->index = cpu->V[x] * 5;
     log_debug("[FX29] - SET I = V[%d] * 5 (sprite_addr)", x);
 }
 
@@ -424,9 +424,9 @@ void ch8_op_store_bcd_of_vx(ch8_cpu *cpu, uint16_t opcode)
 
     const uint8_t x = (opcode & 0x0F00) >> 8;
 
-    cpu->memory[cpu->index_register] = (uint8_t)cpu->V[x] / 100;
-    cpu->memory[cpu->index_register + 1] = (uint8_t)(cpu->V[x] % 100) / 10;
-    cpu->memory[cpu->index_register + 2] = (uint8_t)cpu->V[x] % 10;
+    cpu->memory[cpu->index] = (uint8_t)cpu->V[x] / 100;
+    cpu->memory[cpu->index + 1] = (uint8_t)(cpu->V[x] % 100) / 10;
+    cpu->memory[cpu->index + 2] = (uint8_t)cpu->V[x] % 10;
 
     log_debug("[FX33] - BCD store V[%d] (%d)", x, cpu->V[x]);
 }
@@ -438,7 +438,7 @@ void ch8_op_store_v0_to_vx(ch8_cpu *cpu, uint16_t opcode)
     const uint8_t x = (opcode & 0x0F00) >> 8;
 
     for (int i = 0; i <= x; i++) {
-        cpu->memory[cpu->index_register + i] = cpu->V[i];
+        cpu->memory[cpu->index + i] = cpu->V[i];
     }
 
     //cpu->index_register += x + 1;
@@ -453,7 +453,7 @@ void ch8_op_fill_v0_to_vx(ch8_cpu *cpu, uint16_t opcode)
     const uint8_t x = (opcode & 0x0F00) >> 8;
 
     for (int i = 0; i <= x; i++) {
-        cpu->V[i] = cpu->memory[cpu->index_register + i];
+        cpu->V[i] = cpu->memory[cpu->index + i];
     }
 
     //cpu->index_register += x + 1;

@@ -34,10 +34,10 @@ static const uint8_t font[] = {
 #define FONT_SIZE 80
 // clang-format on
 
-static float delay_timer_val = 0.0f;
-static float sound_timer_val = 0.0f;
+static float delayTimerVal = 0.0f;
+static float soundTimerVal = 0.0f;
 
-static void _update_timer(uint8_t *timer, float *accumulator, float elapsed_ms)
+static void __ch8_updateTimer(uint8_t *timer, float *accumulator, float elapsed_ms)
 {
     assert(timer != NULL);
     assert(accumulator != NULL);
@@ -67,18 +67,18 @@ void ch8_reset(ch8_cpu *cpu)
     // Display refresh sits at 0xF00-0xFFF
     cpu->framebuffer = (cpu->memory + 0xF00);
 
-    cpu->index_register = 0;
-    cpu->program_counter = CH8_PROGRAM_START_OFFSET;
-    cpu->stack_pointer = 0;
+    cpu->index = 0;
+    cpu->programCounter = CH8_PROGRAM_START_OFFSET;
+    cpu->stackPointer = 0;
     cpu->running = false;
 
-    cpu->delay_timer = 0;
-    cpu->sound_timer = 0;
+    cpu->delayTimer = 0;
+    cpu->soundTimer = 0;
 
     log_debug("CHIP-VM (re)-initialized");
 }
 
-void ch8_load_rom(ch8_cpu *cpu, const uint8_t *program, size_t size)
+void ch8_loadRomData(ch8_cpu *cpu, const uint8_t *program, size_t size)
 {
     assert(cpu != NULL);
     assert(size <= CH8_MAX_PROGRAM_SIZE);
@@ -89,7 +89,7 @@ void ch8_load_rom(ch8_cpu *cpu, const uint8_t *program, size_t size)
     log_debug("%d byte-long ROM binary loaded", size);
 }
 
-bool ch8_load_rom_file(ch8_cpu *cpu, const char *file)
+bool ch8_loadRomFile(ch8_cpu *cpu, const char *file)
 {
     assert(cpu != NULL);
     assert(strlen(file) != 0);
@@ -122,18 +122,18 @@ bool ch8_load_rom_file(ch8_cpu *cpu, const char *file)
     return true;
 }
 
-uint16_t ch8_next_opcode(ch8_cpu *cpu)
+uint16_t ch8_nextOpcode(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
 
-    uint8_t msb = cpu->memory[cpu->program_counter];
-    uint8_t lsb = cpu->memory[cpu->program_counter + 1];
+    uint8_t msb = cpu->memory[cpu->programCounter];
+    uint8_t lsb = cpu->memory[cpu->programCounter + 1];
     uint16_t opcode = msb << 8 | lsb;
 
     return opcode;
 }
 
-bool ch8_clock_cycle(ch8_cpu *cpu, float elapsed_ms)
+bool ch8_clockCycle(ch8_cpu *cpu, float elapsed_ms)
 {
     assert(cpu != NULL);
 
@@ -143,7 +143,7 @@ bool ch8_clock_cycle(ch8_cpu *cpu, float elapsed_ms)
         return false;
     }
 
-    const uint16_t opcode = ch8_next_opcode(cpu);
+    const uint16_t opcode = ch8_nextOpcode(cpu);
     if (opcode == 0)
     {
         cpu->running = false;
@@ -311,16 +311,16 @@ bool ch8_clock_cycle(ch8_cpu *cpu, float elapsed_ms)
     }
 
     // Advance the program counter 2 bytes at a time
-    cpu->program_counter += CH8_PC_STEP_SIZE;
+    cpu->programCounter += CH8_PC_STEP_SIZE;
 
     // Update timers
-    _update_timer(&cpu->delay_timer, &delay_timer_val, elapsed_ms);
-    _update_timer(&cpu->sound_timer, &sound_timer_val, elapsed_ms);
+    __ch8_updateTimer(&cpu->delayTimer, &delayTimerVal, elapsed_ms);
+    __ch8_updateTimer(&cpu->soundTimer, &soundTimerVal, elapsed_ms);
 
     return true;
 }
 
-bool ch8_get_pixel(const ch8_cpu *cpu, int x, int y)
+bool ch8_getPixel(const ch8_cpu *cpu, int x, int y)
 {
     int index = y * CH8_DISPLAY_WIDTH + x;
     int byteIndex = index / 8;
@@ -328,7 +328,7 @@ bool ch8_get_pixel(const ch8_cpu *cpu, int x, int y)
     return cpu->framebuffer[byteIndex] & (0x80 >> offset);
 }
 
-void ch8_set_pixel(ch8_cpu *cpu, int x, int y, bool on)
+void ch8_setPixel(ch8_cpu *cpu, int x, int y, bool on)
 {
     int index = y * CH8_DISPLAY_WIDTH + x;
     int byteIndex = index / 8;

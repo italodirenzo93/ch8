@@ -42,7 +42,7 @@ static void initialize(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (display_init() != 0) {
+    if (ch8_displayInit() != 0) {
         log_critical("Failed to initialize the display\n");
         exit(EXIT_FAILURE);
     }
@@ -50,7 +50,7 @@ static void initialize(int argc, char* argv[])
     // Load test ROM
     //ch8_load_rom(cpu, program, SDL_arraysize(program));
     // TODO: Get ROM filename from argv
-    if (!ch8_load_rom_file(cpu, "c8_test.c8")) {
+    if (!ch8_loadRomFile(cpu, "c8_test.c8")) {
         log_critical("Could not load ROM");
         exit(EXIT_FAILURE);
     }
@@ -60,7 +60,7 @@ static void initialize(int argc, char* argv[])
 
 static void cleanup(void)
 {
-    display_quit();
+    ch8_displayQuit();
     ch8_free((void**)&cpu);
     printf("Freed CHIP-8 VM.\n");
 }
@@ -73,13 +73,13 @@ static void window_message_loop(void)
             exit(EXIT_SUCCESS);
             break;
         case SDL_KEYDOWN: {
-            const input_key key = sdl_keycode_to_key_register(event.key.keysym.sym);
-            set_key_down(cpu, key);
+            const ch8_key key = sdl_keycode_to_key_register(event.key.keysym.sym);
+            ch8_setKeyDown(cpu, key);
             break;
         }
         case SDL_KEYUP: {
-            const input_key key = sdl_keycode_to_key_register(event.key.keysym.sym);
-            set_key_up(cpu, key);
+            const ch8_key key = sdl_keycode_to_key_register(event.key.keysym.sym);
+            ch8_setKeyUp(cpu, key);
             break;
         }
         }
@@ -98,9 +98,9 @@ int main(int argc, char *argv[])
         const uint64_t start = SDL_GetPerformanceCounter();
 
         if (cpu->running) {
-            display_clear();
-            cpu->running = ch8_clock_cycle(cpu, elapsed_ms);
-            display_present(cpu);
+            ch8_displayClear();
+            cpu->running = ch8_clockCycle(cpu, elapsed_ms);
+            ch8_displayPresent(cpu);
         }
 
         const uint64_t end = SDL_GetPerformanceCounter();

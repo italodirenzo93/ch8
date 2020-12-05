@@ -1,10 +1,15 @@
-#ifndef __UTIL__
-#define __UTIL__
+#ifndef __UTIL_H__
+#define __UTIL_H__
 
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #define STUBBED(x) printf("STUBBED: %s\n", x)
 
@@ -28,5 +33,9 @@ static inline void ch8_free(void** pptr)
 
 #define ch8_max(a, b) (((a) > (b)) ? (a) : (b))
 #define ch8_min(a, b) (((a) < (b)) ? (a) : (b))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
