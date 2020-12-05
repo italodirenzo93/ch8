@@ -1,49 +1,9 @@
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#endif
+#include "log.h"
 
 #include <stdio.h>
 #include <SDL.h>
 
-#include "log.h"
-
 #define LOG_CATEGORY SDL_LOG_CATEGORY_APPLICATION
-
-static const char* _get_priority_str(SDL_LogPriority priority)
-{
-    switch (priority)
-    {
-    default:
-    case SDL_LOG_PRIORITY_CRITICAL:
-        return "CRIT";
-    case SDL_LOG_PRIORITY_ERROR:
-        return "ERR";
-    case SDL_LOG_PRIORITY_WARN:
-        return "WARN";
-    case SDL_LOG_PRIORITY_INFO:
-        return "INFO";
-    case SDL_LOG_PRIORITY_DEBUG:
-        return "DBG";
-    }
-}
-
-static void _logging_function(void *userdata, int category, SDL_LogPriority priority, const char *message)
-{
-    const char fmt[] = "[%s] %s\n";
-
-    // Write to text file
-    FILE *fp = NULL;
-    fp = fopen("log.txt", "a");
-    if (fp != NULL)
-    {
-        fprintf(fp, fmt, _get_priority_str(priority), message);
-        fclose(fp);
-        fp = NULL;
-    }
-    
-    // Write to stderr
-    fprintf(stderr, fmt, _get_priority_str(priority), message);
-}
 
 int log_init()
 {

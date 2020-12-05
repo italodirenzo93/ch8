@@ -1,9 +1,14 @@
-#ifndef __CH8_CPU__
-#define __CH8_CPU__
+#ifndef __CH8_CPU_H__
+#define __CH8_CPU_H__
 
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #define CH8_MEM_SIZE 4096
 #define CH8_STACK_SIZE 64
@@ -29,24 +34,28 @@ typedef struct ch8_cpu
 
     uint8_t V[CH8_NUM_REGISTERS]; /* data registers */
 
-    uint16_t index_register;
-    uint16_t program_counter;
-    uint8_t stack_pointer;
+    uint16_t index;
+    uint16_t programCounter;
+    uint8_t stackPointer;
 
-    uint8_t delay_timer;
-    uint8_t sound_timer;
+    uint8_t delayTimer;
+    uint8_t soundTimer;
 
     bool keypad[CH8_NUM_KEYS];
     bool running;
 } ch8_cpu;
 
 void ch8_reset(ch8_cpu *cpu);
-void ch8_load_rom(ch8_cpu *cpu, const uint8_t *program, size_t size);
-bool ch8_load_rom_file(ch8_cpu *cpu, const char *file);
-uint16_t ch8_next_opcode(ch8_cpu *cpu);
-bool ch8_clock_cycle(ch8_cpu *cpu, float elapsed_ms);
+void ch8_loadRomData(ch8_cpu *cpu, const uint8_t *program, size_t size);
+bool ch8_loadRomFile(ch8_cpu *cpu, const char *file);
+uint16_t ch8_nextOpcode(ch8_cpu *cpu);
+bool ch8_clockCycle(ch8_cpu *cpu, float elapsed_ms);
 
-bool ch8_get_pixel(const ch8_cpu *cpu, int x, int y);
-void ch8_set_pixel(ch8_cpu *cpu, int x, int y, bool on);
+bool ch8_getPixel(const ch8_cpu *cpu, int x, int y);
+void ch8_setPixel(ch8_cpu *cpu, int x, int y, bool on);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

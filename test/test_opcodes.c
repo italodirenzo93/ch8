@@ -5,7 +5,7 @@
 #include "keyboard.h"
 
 // STUBS
-void display_clear()
+void ch8_displayClear()
 {
     TEST_PASS_MESSAGE("display_clear called");
 }
@@ -31,12 +31,12 @@ static void return_from_subroutine_sets_pc_to_last_stack_address(void)
 {
     const uint16_t addr = 0xE21F;
     chip8.stack[7] = addr;
-    chip8.stack_pointer = 8;
+    chip8.stackPointer = 8;
     
     ch8_op_return(&chip8);
     
-    TEST_ASSERT_EQUAL(addr, chip8.program_counter);
-    TEST_ASSERT_EQUAL(7, chip8.stack_pointer);
+    TEST_ASSERT_EQUAL(addr, chip8.programCounter);
+    TEST_ASSERT_EQUAL(7, chip8.stackPointer);
 }
 
 static void jumpto_sets_pc_to_address(void)
@@ -44,7 +44,7 @@ static void jumpto_sets_pc_to_address(void)
     const uint16_t opcode = 0x1323;
     const uint16_t addr = opcode & 0x0FFF;
     ch8_op_jumpto(&chip8, opcode);
-    TEST_ASSERT_EQUAL(addr, chip8.program_counter);
+    TEST_ASSERT_EQUAL(addr, chip8.programCounter);
 }
 
 static void cond_eq_skips_next_instruction_if_equal(void)
@@ -52,11 +52,11 @@ static void cond_eq_skips_next_instruction_if_equal(void)
     const uint16_t opcode = 0x2305;
     const uint8_t vx = (opcode & 0x0F00) >> 8;
 
-    chip8.program_counter = 144;
+    chip8.programCounter = 144;
     chip8.V[vx] = 5;
 
     ch8_op_cond_eq(&chip8, opcode);
-    TEST_ASSERT_EQUAL(146, chip8.program_counter);
+    TEST_ASSERT_EQUAL(146, chip8.programCounter);
 }
 
 static void cond_eq_does_not_skip_next_instruction_if_unequal(void)
@@ -64,11 +64,11 @@ static void cond_eq_does_not_skip_next_instruction_if_unequal(void)
     const uint16_t opcode = 0x23EE;
     const uint8_t vx = (opcode & 0x0F00) >> 8;
 
-    chip8.program_counter = 144;
+    chip8.programCounter = 144;
     chip8.V[vx] = 5;
 
     ch8_op_cond_eq(&chip8, opcode);
-    TEST_ASSERT_EQUAL(144, chip8.program_counter);
+    TEST_ASSERT_EQUAL(144, chip8.programCounter);
 }
 
 static void cond_neq_skips_next_instruction_if_nequal(void)
@@ -76,11 +76,11 @@ static void cond_neq_skips_next_instruction_if_nequal(void)
     const uint16_t opcode = 0x23FF;
     const uint8_t vx = (opcode & 0x0F00) >> 8;
 
-    chip8.program_counter = 144;
+    chip8.programCounter = 144;
     chip8.V[vx] = 27;
 
     ch8_op_cond_neq(&chip8, opcode);
-    TEST_ASSERT_EQUAL(146, chip8.program_counter);
+    TEST_ASSERT_EQUAL(146, chip8.programCounter);
 }
 
 static void cond_neq_does_not_skip_next_instruction_if_equal(void)
@@ -88,11 +88,11 @@ static void cond_neq_does_not_skip_next_instruction_if_equal(void)
     const uint16_t opcode = 0x23FF;
     const uint8_t vx = (opcode & 0x0F00) >> 8;
 
-    chip8.program_counter = 144;
+    chip8.programCounter = 144;
     chip8.V[vx] = 255;
 
     ch8_op_cond_neq(&chip8, opcode);
-    TEST_ASSERT_EQUAL(144, chip8.program_counter);
+    TEST_ASSERT_EQUAL(144, chip8.programCounter);
 }
 
 static void cond_vx_eq_vy_skips_next_instruction_if_equal(void)
@@ -101,12 +101,12 @@ static void cond_vx_eq_vy_skips_next_instruction_if_equal(void)
     const uint8_t vx = (opcode & 0x0F00) >> 8;
     const uint8_t vy = (opcode & 0x00F0) >> 4;
 
-    chip8.program_counter = 144;
+    chip8.programCounter = 144;
     chip8.V[vx] = 255;
     chip8.V[vy] = 255;
 
     ch8_op_cond_vx_eq_vy(&chip8, opcode);
-    TEST_ASSERT_EQUAL(146, chip8.program_counter);
+    TEST_ASSERT_EQUAL(146, chip8.programCounter);
 }
 
 static void cond_vx_eq_vy_does_not_skip_next_instruction_if_unequal(void)
@@ -115,12 +115,12 @@ static void cond_vx_eq_vy_does_not_skip_next_instruction_if_unequal(void)
     const uint8_t vx = (opcode & 0x0F00) >> 8;
     const uint8_t vy = (opcode & 0x00F0) >> 4;
 
-    chip8.program_counter = 144;
+    chip8.programCounter = 144;
     chip8.V[vx] = 255;
     chip8.V[vy] = 254;
 
     ch8_op_cond_vx_eq_vy(&chip8, opcode);
-    TEST_ASSERT_EQUAL(144, chip8.program_counter);
+    TEST_ASSERT_EQUAL(144, chip8.programCounter);
 }
 
 static void const_set_sets_vx_to_value(void)
@@ -223,63 +223,63 @@ static void sub_vy_from_vx_sets_borrow_to_1_if_no_underflow(void)
 static void set_i_to_address(void)
 {
     ch8_op_set_addr(&chip8, 0xA3FF);
-    TEST_ASSERT_EQUAL(0x03FF, chip8.index_register);
+    TEST_ASSERT_EQUAL(0x03FF, chip8.index);
 }
 
 static void jump_to_addr_plus_v0(void)
 {
     chip8.V[0] = 0x04;
     ch8_jump_to_addr_plus_v0(&chip8, 0xB199);
-    TEST_ASSERT_EQUAL(413, chip8.program_counter);
+    TEST_ASSERT_EQUAL(413, chip8.programCounter);
 }
 
 // 0xEX9E
 static void key_down_skip_next_instruction(void)
 {
     chip8.keypad[8] = true;
-    chip8.program_counter = 5;
+    chip8.programCounter = 5;
     ch8_op_keyop_eq(&chip8, 0xE800);
-    TEST_ASSERT_EQUAL(7, chip8.program_counter);
+    TEST_ASSERT_EQUAL(7, chip8.programCounter);
 }
 
 static void key_down_does_not_skip_next_instruction(void)
 {
     chip8.keypad[8] = true;
     chip8.keypad[4] = false;
-    chip8.program_counter = 5;
+    chip8.programCounter = 5;
     ch8_op_keyop_eq(&chip8, 0xE400);
-    TEST_ASSERT_EQUAL(5, chip8.program_counter);
+    TEST_ASSERT_EQUAL(5, chip8.programCounter);
 }
 
 // 0xEXA1
 static void key_up_skip_next_instruction(void)
 {
     chip8.keypad[8] = true;
-    chip8.program_counter = 5;
+    chip8.programCounter = 5;
     ch8_op_keyop_neq(&chip8, 0xE800);
-    TEST_ASSERT_EQUAL(5, chip8.program_counter);
+    TEST_ASSERT_EQUAL(5, chip8.programCounter);
 }
 
 static void key_up_does_not_skip_next_instruction(void)
 {
     chip8.keypad[9] = true;
     chip8.keypad[4] = false;
-    chip8.program_counter = 5;
+    chip8.programCounter = 5;
     ch8_op_keyop_neq(&chip8, 0xE400);
-    TEST_ASSERT_EQUAL(7, chip8.program_counter);
+    TEST_ASSERT_EQUAL(7, chip8.programCounter);
 }
 
 // 0xFX33
 static void test_store_bcd_of_vx_at_i(void)
 {
     chip8.V[3] = 255;
-    chip8.index_register = 764;
+    chip8.index = 764;
 
     ch8_op_store_bcd_of_vx(&chip8, 0xF333);
 
-    TEST_ASSERT_EQUAL(2, chip8.memory[chip8.index_register]);
-    TEST_ASSERT_EQUAL(5, chip8.memory[chip8.index_register + 1]);
-    TEST_ASSERT_EQUAL(5, chip8.memory[chip8.index_register + 2]);
+    TEST_ASSERT_EQUAL(2, chip8.memory[chip8.index]);
+    TEST_ASSERT_EQUAL(5, chip8.memory[chip8.index + 1]);
+    TEST_ASSERT_EQUAL(5, chip8.memory[chip8.index + 2]);
 }
 
 // 0xFX55
@@ -287,7 +287,7 @@ static void test_store_V0_to_Vx(void)
 {
     const uint16_t start_addr = 2078; /* random memory offset */
 
-    chip8.index_register = start_addr;
+    chip8.index = start_addr;
     chip8.V[0] = 5;
     chip8.V[1] = 4;
     chip8.V[2] = 22;
@@ -308,7 +308,7 @@ static void test_fill_V0_to_Vx(void)
 {
     const uint16_t start_addr = 2078; /* random memory offset */
 
-    chip8.index_register = start_addr;
+    chip8.index = start_addr;
     chip8.memory[start_addr] = 5;
     chip8.memory[start_addr + 1] = 4;
     chip8.memory[start_addr + 2] = 22;

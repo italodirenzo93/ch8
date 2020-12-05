@@ -7,7 +7,7 @@
 #include "ch8_cpu.h"
 #include "log.h"
 
-input_key sdl_keycode_to_key_register(SDL_Keycode keycode)
+ch8_key sdl_keycode_to_key_register(SDL_Keycode keycode)
 {
     switch (keycode)
     {
@@ -64,7 +64,7 @@ input_key sdl_keycode_to_key_register(SDL_Keycode keycode)
     }
 }
 
-bool is_key_down(const ch8_cpu *cpu, input_key key)
+bool ch8_isKeyDown(const ch8_cpu *cpu, ch8_key key)
 {
     assert(cpu != NULL);
     if (key == KEY_UNKNOWN) {
@@ -73,7 +73,7 @@ bool is_key_down(const ch8_cpu *cpu, input_key key)
     return cpu->keypad[key] == true;
 }
 
-bool is_key_up(const ch8_cpu *cpu, input_key key)
+bool ch8_isKeyUp(const ch8_cpu *cpu, ch8_key key)
 {
     assert(cpu != NULL);
     if (key == KEY_UNKNOWN) {
@@ -82,7 +82,7 @@ bool is_key_up(const ch8_cpu *cpu, input_key key)
     return cpu->keypad[key] == false;
 }
 
-void set_key_down(ch8_cpu *cpu, input_key key)
+void ch8_setKeyDown(ch8_cpu *cpu, ch8_key key)
 {
     assert(cpu != NULL);
     if (key != KEY_UNKNOWN) {
@@ -90,7 +90,7 @@ void set_key_down(ch8_cpu *cpu, input_key key)
     }
 }
 
-void set_key_up(ch8_cpu *cpu, input_key key)
+void ch8_setKeyUp(ch8_cpu *cpu, ch8_key key)
 {
     assert(cpu != NULL);
     if (key != KEY_UNKNOWN) {
@@ -98,7 +98,7 @@ void set_key_up(ch8_cpu *cpu, input_key key)
     }
 }
 
-int await_keypress(ch8_cpu *cpu, input_key *key)
+int ch8_awaitKeyPress(ch8_cpu *cpu, ch8_key *key)
 {
     assert(cpu != NULL);
     
@@ -112,7 +112,7 @@ int await_keypress(ch8_cpu *cpu, input_key *key)
     
     (*key) = sdl_keycode_to_key_register(event.key.keysym.sym);
     if ((*key) != KEY_UNKNOWN) {
-        set_key_down(cpu, (*key));
+        ch8_setKeyDown(cpu, (*key));
     }
     
     return 0;

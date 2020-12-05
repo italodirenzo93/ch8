@@ -17,7 +17,7 @@ static bool initialized = false;
 
 #define INIT_CHECK() if (!initialized) return
 
-int display_init()
+int ch8_displayInit()
 {
     if (initialized)
     {
@@ -63,7 +63,7 @@ int display_init()
     return 0;
 }
 
-void display_quit()
+void ch8_displayQuit()
 {
     INIT_CHECK();
 
@@ -89,13 +89,13 @@ void display_quit()
     initialized = false;
 }
 
-void display_clear()
+void ch8_displayClear()
 {
     INIT_CHECK();
     SDL_RenderClear(renderer);
 }
 
-void display_present(const ch8_cpu* cpu)
+void ch8_displayPresent(const ch8_cpu* cpu)
 {
     INIT_CHECK();
     assert(cpu != NULL);
@@ -103,7 +103,7 @@ void display_present(const ch8_cpu* cpu)
     SDL_RenderPresent(renderer);
 }
 
-void display_write_fb(const ch8_cpu* cpu)
+void ch8_displayWriteFb(const ch8_cpu* cpu)
 {
     INIT_CHECK();
     assert(cpu != NULL);
@@ -117,7 +117,7 @@ void display_write_fb(const ch8_cpu* cpu)
         uint32_t* p = (uint32_t*)(pixels + pitch * y);
         for (x = 0; x < CH8_DISPLAY_WIDTH; x++) {
             const uint16_t i = y * CH8_DISPLAY_WIDTH + x;
-            const uint8_t color = ch8_get_pixel(cpu, x, y) > 0 ? 255 : 0;
+            const uint8_t color = ch8_getPixel(cpu, x, y) > 0 ? 255 : 0;
             *p = SDL_MapRGB(pixelFormat, color, color, color);
             p++;
         }
