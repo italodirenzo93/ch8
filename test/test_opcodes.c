@@ -1,21 +1,10 @@
 #include "vendor/unity.h"
-#include "opcodes.h"
-#include "display.h"
+
+#include "ch8_opcodes.h"
+#include "ch8_display.h"
 #include "ch8_cpu.h"
-#include "keyboard.h"
+#include "ch8_keyboard.h"
 
-// STUBS
-void ch8_displayClear()
-{
-    TEST_PASS_MESSAGE("display_clear called");
-}
-
-void draw_sprite(ch8_cpu *cpu, uint8_t x, uint8_t y, uint8_t h)
-{
-    TEST_PASS_MESSAGE("draw_sprite called");
-}
-
-// TESTS
 ch8_cpu chip8;
 
 void setUp()

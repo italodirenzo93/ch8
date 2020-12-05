@@ -1,15 +1,11 @@
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
 #include "ch8_cpu.h"
-#include "opcodes.h"
-#include "log.h"
-#include "util.h"
+#include "ch8_opcodes.h"
+#include "ch8_log.h"
+#include "ch8_util.h"
 
 // clang-format off
 static const uint8_t font[] = {
@@ -31,7 +27,7 @@ static const uint8_t font[] = {
     0xF0, 0x80, 0xF0, 0x80, 0xF0,
     0xF0, 0x80, 0xF0, 0x80, 0x80,
 };
-#define FONT_SIZE 80
+#define CH8_FONT_SIZE 80
 // clang-format on
 
 static float delayTimerVal = 0.0f;
@@ -59,23 +55,22 @@ void ch8_reset(ch8_cpu *cpu)
     memset(cpu->memory, 0, CH8_MEM_SIZE);
 
     // Font data sits at beginning
-    memcpy(cpu->memory, font, FONT_SIZE);
+    memcpy(cpu->memory, font, CH8_FONT_SIZE);
 
     // Stack sits at offset 0xEA0-0xEFF
-    cpu->stack = (uint16_t *)(cpu->memory + 0xEA0);
+    cpu->stack = (uint16_t *)(cpu->memory + CH8_CALL_STACK_OFFSET);
 
     // Display refresh sits at 0xF00-0xFFF
-    cpu->framebuffer = (cpu->memory + 0xF00);
+    cpu->framebuffer = cpu->memory + CH8_DISPLAY_REFRESH_OFFSET;
 
     cpu->index = 0;
     cpu->programCounter = CH8_PROGRAM_START_OFFSET;
     cpu->stackPointer = 0;
-    cpu->running = false;
 
     cpu->delayTimer = 0;
     cpu->soundTimer = 0;
 
-    log_debug("CHIP-VM (re)-initialized");
+    ch8_logDebug("CHIP-VM (re)-initialized");
 }
 
 void ch8_loadRomData(ch8_cpu *cpu, const uint8_t *program, size_t size)
@@ -86,7 +81,7 @@ void ch8_loadRomData(ch8_cpu *cpu, const uint8_t *program, size_t size)
     memset(cpu->memory + CH8_PROGRAM_START_OFFSET, 0, CH8_MAX_PROGRAM_SIZE);
     memcpy(cpu->memory + CH8_PROGRAM_START_OFFSET, program, size);
 
-    log_debug("%d byte-long ROM binary loaded", size);
+    ch8_logDebug("%d byte-long ROM binary loaded", size);
 }
 
 bool ch8_loadRomFile(ch8_cpu *cpu, const char *file)
@@ -94,13 +89,13 @@ bool ch8_loadRomFile(ch8_cpu *cpu, const char *file)
     assert(cpu != NULL);
     assert(strlen(file) != 0);
 
-    log_debug("Loading ROM file %s...", file);
+    ch8_logDebug("Loading ROM file %s...", file);
 
     size_t len = 0;
     FILE *f = fopen(file, "rb");
     if (f == NULL)
     {
-        log_error("Could not open file %s...", file);
+        ch8_logError("Could not open file %s...", file);
         return false;
     }
 
@@ -110,7 +105,7 @@ bool ch8_loadRomFile(ch8_cpu *cpu, const char *file)
     rewind(f);
     if (len > CH8_MAX_PROGRAM_SIZE)
     {
-        log_error("File size too large (%zu bytes)", len);
+        ch8_logError("File size too large (%zu bytes)", len);
         return false;
     }
 
@@ -137,17 +132,8 @@ bool ch8_clockCycle(ch8_cpu *cpu, float elapsed_ms)
 {
     assert(cpu != NULL);
 
-    if (!cpu->running)
-    {
-        log_error("Could not execute opcode because CHIP-8 VM is not running");
-        return false;
-    }
-
     const uint16_t opcode = ch8_nextOpcode(cpu);
-    if (opcode == 0)
-    {
-        cpu->running = false;
-        log_debug("ROM exited");
+    if (opcode == 0) {
         return false;
     }
 
@@ -164,7 +150,7 @@ bool ch8_clockCycle(ch8_cpu *cpu, float elapsed_ms)
             ch8_op_return(cpu);
             break;
         default:
-            log_debug("NOOP");
+            ch8_logDebug("NOOP");
             break;
         }
         break;
@@ -230,7 +216,7 @@ bool ch8_clockCycle(ch8_cpu *cpu, float elapsed_ms)
             ch8_op_bitshift_left_vx_to_vf(cpu, opcode);
             break;
         default:
-            log_error("Invalid opcode %X", opcode);
+            ch8_logError("Invalid opcode %X", opcode);
             break;
         }
         break;
@@ -263,7 +249,7 @@ bool ch8_clockCycle(ch8_cpu *cpu, float elapsed_ms)
             ch8_op_keyop_neq(cpu, opcode);
             break;
         default:
-            log_error("Invalid opcode %X", opcode);
+            ch8_logError("Invalid opcode %X", opcode);
             break;
         }
         break;
@@ -300,13 +286,13 @@ bool ch8_clockCycle(ch8_cpu *cpu, float elapsed_ms)
             ch8_op_fill_v0_to_vx(cpu, opcode);
             break;
         default:
-            log_error("Invalid opcode %X", opcode);
+            ch8_logError("Invalid opcode %X", opcode);
             break;
         }
         break;
     }
     default:
-        log_error("Unrecognized opcode: %X", opcode);
+        ch8_logError("Unrecognized opcode: %X", opcode);
         return false;
     }
 

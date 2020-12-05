@@ -17,8 +17,8 @@ extern "C"
 #define CH8_NUM_KEYS 16
 
 #define CH8_PROGRAM_START_OFFSET 0x200
-#define CH8_CALL_STACK_OFFSET 3744
-#define CH8_DISPLAY_REFRESH_OFFSET 3840
+#define CH8_CALL_STACK_OFFSET 0xEA0
+#define CH8_DISPLAY_REFRESH_OFFSET 0xF00
 
 #define CH8_PC_STEP_SIZE 2
 
@@ -42,7 +42,6 @@ typedef struct ch8_cpu
     uint8_t soundTimer;
 
     bool keypad[CH8_NUM_KEYS];
-    bool running;
 } ch8_cpu;
 
 void ch8_reset(ch8_cpu *cpu);

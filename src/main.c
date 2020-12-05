@@ -3,15 +3,14 @@
 #include <SDL.h>
 
 #include "ch8_cpu.h"
-#include "display.h"
-#include "keyboard.h"
-#include "log.h"
-#include "util.h"
+#include "ch8_display.h"
+#include "ch8_keyboard.h"
+#include "ch8_log.h"
+#include "ch8_util.h"
 
-ch8_cpu *cpu = NULL;
+ch8_cpu cpu = { 0 };
 
-static SDL_Event event;
-static SDL_Window* window = NULL;
+SDL_Window* window = NULL;
 
 //static const uint8_t program[] = { 0x00, 0xE0 };
 static const uint8_t program[] = {
@@ -43,44 +42,48 @@ static void initialize(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    // Allocate VM
-    cpu = ch8_malloc(sizeof(ch8_cpu));
-
     // Initialize VM
-    ch8_reset(cpu);
+    ch8_reset(&cpu);
     srand((unsigned int)time(NULL));
 
     // Initialize sub-systems
-    if (log_init() != 0) {
+    if (ch8_logInit() != 0) {
         printf("Could not initialize the logger\n");
         exit(EXIT_FAILURE);
     }
 
     if (ch8_displayInit((void*)window) != 0) {
-        log_critical("Failed to initialize the display\n");
+        ch8_logCritical("Failed to initialize the display\n");
         exit(EXIT_FAILURE);
     }
 
     // Load test ROM
     //ch8_load_rom(cpu, program, SDL_arraysize(program));
     // TODO: Get ROM filename from argv
-    if (!ch8_loadRomFile(cpu, "test_opcode.c8")) {
-        log_critical("Could not load ROM");
+    if (!ch8_loadRomFile(&cpu, "test_opcode.ch8")) {
+        ch8_logCritical("Could not load ROM");
         exit(EXIT_FAILURE);
     }
-
-    cpu->running = true;
 }
 
 static void cleanup(void)
 {
     ch8_displayQuit();
-    ch8_free((void**)&cpu);
+
+    if (window != NULL) {
+        SDL_DestroyWindow(window);
+        window = NULL;
+    }
+
+    SDL_Quit();
+
     printf("Freed CHIP-8 VM.\n");
 }
 
 static void windowMessageLoop(void)
 {
+    SDL_Event event;
+
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
         case SDL_QUIT:
@@ -88,12 +91,12 @@ static void windowMessageLoop(void)
             break;
         case SDL_KEYDOWN: {
             const ch8_key key = sdl_keycode_to_key_register(event.key.keysym.sym);
-            ch8_setKeyDown(cpu, key);
+            ch8_setKeyDown(&cpu, key);
             break;
         }
         case SDL_KEYUP: {
             const ch8_key key = sdl_keycode_to_key_register(event.key.keysym.sym);
-            ch8_setKeyUp(cpu, key);
+            ch8_setKeyUp(&cpu, key);
             break;
         }
         }
@@ -111,10 +114,9 @@ int main(int argc, char *argv[])
 
         const uint64_t start = SDL_GetPerformanceCounter();
 
-        if (cpu->running) {
+        if (ch8_clockCycle(&cpu, elapsed_ms)) {
             ch8_displayClear();
-            cpu->running = ch8_clockCycle(cpu, elapsed_ms);
-            ch8_displayPresent(cpu);
+            ch8_displayPresent();
         }
 
         const uint64_t end = SDL_GetPerformanceCounter();

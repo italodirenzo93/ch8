@@ -1,20 +1,20 @@
-#include "opcodes.h"
+#include "ch8_opcodes.h"
 
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
 
-#include "display.h"
+#include "ch8_display.h"
 #include "ch8_cpu.h"
-#include "log.h"
-#include "keyboard.h"
-#include "util.h"
+#include "ch8_log.h"
+#include "ch8_keyboard.h"
+#include "ch8_util.h"
 
 // 0x00E0
 void ch8_op_display_clear(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
-    log_debug("[00E0] - Clear Display");
+    ch8_logDebug("[00E0] - Clear Display");
 
     for (int i = 0; i < CH8_DISPLAY_SIZE; i++) {
         cpu->framebuffer[i] = 0;
@@ -25,7 +25,7 @@ void ch8_op_display_clear(ch8_cpu *cpu)
 void ch8_op_return(ch8_cpu* cpu)
 {
     assert(cpu != NULL);
-    log_debug("[00EE] - Return from sub-routine");
+    ch8_logDebug("[00EE] - Return from sub-routine");
 
     cpu->programCounter = cpu->stack[--cpu->stackPointer];
 }
@@ -35,7 +35,7 @@ void ch8_op_jumpto(ch8_cpu* cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
     const uint16_t addr = opcode & 0x0FFF;
-    log_debug("[1NNN] - Jump to address %X", addr);
+    ch8_logDebug("[1NNN] - Jump to address %X", addr);
     cpu->programCounter = addr;
 }
 
@@ -45,7 +45,7 @@ void ch8_op_callsub(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
 
     const uint16_t addr = opcode & 0x0FFF;
-    log_debug("[2NNN] - Call subroutine at address %X", addr);
+    ch8_logDebug("[2NNN] - Call subroutine at address %X", addr);
 
     cpu->stack[cpu->stackPointer++] = cpu->programCounter;
     cpu->programCounter = addr;
@@ -57,7 +57,7 @@ void ch8_op_cond_eq(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
     const uint8_t x = (opcode & 0x0F00) >> 8;
     const uint8_t operand = opcode & 0x00FF;
-    log_debug("[3XKK] - IF conditional (V[%d] == %d)", x, operand);
+    ch8_logDebug("[3XKK] - IF conditional (V[%d] == %d)", x, operand);
     if (cpu->V[x] == operand)
     {
         // Skip the next instruction
@@ -71,7 +71,7 @@ void ch8_op_cond_neq(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
     const uint8_t x = (opcode & 0x0F00) >> 8;
     const uint8_t operand = opcode & 0x00FF;
-    log_debug("[4XKK] - IF conditional (V[%d] != %d)", x, operand);
+    ch8_logDebug("[4XKK] - IF conditional (V[%d] != %d)", x, operand);
     if (cpu->V[x] != operand)
     {
         // Skip the next instruction
@@ -85,7 +85,7 @@ void ch8_op_cond_vx_eq_vy(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
     const uint8_t x = (opcode & 0x0F00) >> 8;
     const uint8_t y = (opcode & 0x00F0) >> 4;
-    log_debug("[5XY0] - IF conditional (V[%d] == V[%d])\n", x, y);
+    ch8_logDebug("[5XY0] - IF conditional (V[%d] == V[%d])\n", x, y);
     if (cpu->V[x] == cpu->V[y])
     {
         // Skip the next instruction
@@ -99,7 +99,7 @@ void ch8_op_const_set(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
     const uint8_t x = (opcode & 0x0F00) >> 8;
     const uint8_t value = opcode & 0x00FF;
-    log_debug("[6XKK] - SET register V[%d] = %d\n", x, value);
+    ch8_logDebug("[6XKK] - SET register V[%d] = %d\n", x, value);
     cpu->V[x] = value;
 }
 
@@ -109,7 +109,7 @@ void ch8_op_const_add(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
     const uint8_t x = (opcode & 0x0F00) >> 8;
     const uint8_t operand = opcode & 0x00FF;
-    log_debug("[7XKK] - ADD %d to register V[%d]\n", operand, x);
+    ch8_logDebug("[7XKK] - ADD %d to register V[%d]\n", operand, x);
     cpu->V[x] += operand;
 }
 
@@ -121,7 +121,7 @@ void ch8_op_assign(ch8_cpu *cpu, uint16_t opcode)
     const uint8_t x = (opcode & 0x0F00) >> 8;
     const uint8_t y = (opcode & 0x00F0) >> 4;
 
-    log_debug("[8XY0] - SET V[%d] = V[%d]\n", x, y);
+    ch8_logDebug("[8XY0] - SET V[%d] = V[%d]\n", x, y);
     cpu->V[x] = cpu->V[y];
 }
 
@@ -133,7 +133,7 @@ void ch8_op_or(ch8_cpu *cpu, uint16_t opcode)
     const uint8_t x = (opcode & 0x0F00) >> 8;
     const uint8_t y = (opcode & 0x00F0) >> 4;
 
-    log_debug("[8XY1] - OR V[%d] = (V[%d] | V[%d])\n", x, x, y);
+    ch8_logDebug("[8XY1] - OR V[%d] = (V[%d] | V[%d])\n", x, x, y);
     cpu->V[x] |= cpu->V[y];
 }
 
@@ -145,7 +145,7 @@ void ch8_op_and(ch8_cpu *cpu, uint16_t opcode)
     const uint8_t x = (opcode & 0x0F00) >> 8;
     const uint8_t y = (opcode & 0x00F0) >> 4;
 
-    log_debug("[8XY2] - AND V[%d] = (V[%d] & V[%d])\n", x, x, y);
+    ch8_logDebug("[8XY2] - AND V[%d] = (V[%d] & V[%d])\n", x, x, y);
     cpu->V[x] &= cpu->V[y];
 }
 
@@ -157,7 +157,7 @@ void ch8_op_xor(ch8_cpu *cpu, uint16_t opcode)
     const uint8_t x = (opcode & 0x0F00) >> 8;
     const uint8_t y = (opcode & 0x00F0) >> 4;
 
-    log_debug("[8XY3] - XOR V[%d] = (V[%d] ^ V[%d])\n", x, x, y);
+    ch8_logDebug("[8XY3] - XOR V[%d] = (V[%d] ^ V[%d])\n", x, x, y);
     cpu->V[x] ^= cpu->V[y];
 }
 
@@ -179,7 +179,7 @@ void ch8_op_add_vx_to_vy(ch8_cpu *cpu, uint16_t opcode)
 
     cpu->V[x] = (uint8_t)sum;
 
-    log_debug("[8XY4] - ADD V[%d] += V[%d] : V[0xF] = %d", x, y, cpu->V[0xF]);
+    ch8_logDebug("[8XY4] - ADD V[%d] += V[%d] : V[0xF] = %d", x, y, cpu->V[0xF]);
 }
 
 // 0x8XY5
@@ -198,7 +198,7 @@ void ch8_op_sub_vy_from_vx(ch8_cpu *cpu, uint16_t opcode)
 
     cpu->V[x] -= cpu->V[y];
 
-    log_debug("[8XY5] - SUB V[%d] -= V[%d] : V[0xF] = %d", x, y, cpu->V[0xF]);
+    ch8_logDebug("[8XY5] - SUB V[%d] -= V[%d] : V[0xF] = %d", x, y, cpu->V[0xF]);
 }
 
 // 0x8XY6
@@ -210,7 +210,7 @@ void ch8_op_bitshift_right_vx_to_vf(ch8_cpu *cpu, uint16_t opcode)
     cpu->V[0xF] = cpu->V[x] & 0x1;
     cpu->V[x] >>= 1;
 
-    log_debug("[8XY6] - SHIFTR V[%d] >>= 1", x);
+    ch8_logDebug("[8XY6] - SHIFTR V[%d] >>= 1", x);
 }
 
 // 0x8XY7
@@ -223,7 +223,7 @@ void ch8_op_set_vx_to_vx_sub_vy(ch8_cpu *cpu, uint16_t opcode)
     cpu->V[0xF] = cpu->V[y] > cpu->V[x] ? 1 : 0;
     cpu->V[x] = cpu->V[y] - cpu->V[x];
 
-    log_debug("[8XY7] - SUB V[%d] = V[%d] - V[%d]", x, y, x);
+    ch8_logDebug("[8XY7] - SUB V[%d] = V[%d] - V[%d]", x, y, x);
 }
 
 // 0x8XYE
@@ -235,7 +235,7 @@ void ch8_op_bitshift_left_vx_to_vf(ch8_cpu *cpu, uint16_t opcode)
     cpu->V[0xF] = cpu->V[x] & 0x80;
     cpu->V[x] <<= 1;
 
-    log_debug("[8XYE] - SHIFTL V[%d] <<= 1", x);
+    ch8_logDebug("[8XYE] - SHIFTL V[%d] <<= 1", x);
 }
 
 // 0x9XY0
@@ -244,7 +244,7 @@ void ch8_op_cond_vx_neq_vy(ch8_cpu* cpu, uint16_t opcode)
     assert(cpu != NULL);
     const uint8_t x = (opcode & 0x0F00) >> 8;
     const uint8_t y = (opcode & 0x00F0) >> 4;
-    log_debug("[9XY0] - IF conditional (V[%d] != V[%d])\n", x, y);
+    ch8_logDebug("[9XY0] - IF conditional (V[%d] != V[%d])\n", x, y);
     if (cpu->V[x] != cpu->V[y])
     {
         // Skip the next instruction
@@ -257,7 +257,7 @@ void ch8_op_set_addr(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
     const uint16_t addr = opcode & 0x0FFF;
-    log_debug("[ANNN] - SET I = %d\n", addr);
+    ch8_logDebug("[ANNN] - SET I = %d\n", addr);
     cpu->index = addr;
 }
 
@@ -266,7 +266,7 @@ void ch8_jump_to_addr_plus_v0(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
     const uint16_t addr = opcode & 0x0FFF;
-    log_debug("JUMP to %d + V[0]\n", addr);
+    ch8_logDebug("JUMP to %d + V[0]\n", addr);
     cpu->programCounter = addr + cpu->V[0];
 }
 
@@ -276,7 +276,7 @@ void ch8_op_bitwise_rand(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
     const uint8_t x = (opcode & 0x0F00) >> 8;
     const uint8_t nn = (opcode & 0x00FF);
-    log_debug("RAND V[%d] = rand() & %d\n", x, nn);
+    ch8_logDebug("RAND V[%d] = rand() & %d\n", x, nn);
     cpu->V[x] = (rand() % 256) & nn;
 }
 
@@ -324,7 +324,7 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
 
     ch8_displayWriteFb(cpu);
 
-    log_debug("[DXYN] - Draw X: %d, Y: %d, N: %d", cpu->V[x], cpu->V[y], n);
+    ch8_logDebug("[DXYN] - Draw X: %d, Y: %d, N: %d", cpu->V[x], cpu->V[y], n);
 }
 
 // 0xEX9E
@@ -332,7 +332,7 @@ void ch8_op_keyop_eq(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
     const ch8_key key = (ch8_key) ((opcode & 0x0F00) >> 8);
-    log_debug("KEY check if keypad[%d] is down\n", key);
+    ch8_logDebug("KEY check if keypad[%d] is down\n", key);
     if (ch8_isKeyDown(cpu, key)) {
         cpu->programCounter += CH8_PC_STEP_SIZE;
     }
@@ -343,7 +343,7 @@ void ch8_op_keyop_neq(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
     const ch8_key key = (ch8_key) ((opcode & 0x0F00) >> 8);
-    log_debug("KEY check if keypad[%d] is up\n", key);
+    ch8_logDebug("KEY check if keypad[%d] is up\n", key);
     if (ch8_isKeyUp(cpu, key)) {
         cpu->programCounter += CH8_PC_STEP_SIZE;
     }
@@ -355,20 +355,20 @@ void ch8_op_set_vx_to_delay_timer(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
     const uint16_t x = (opcode & 0x0F00) >> 8;
     cpu->V[x] = cpu->delayTimer;
-    log_debug("TIMER set V[%d] = delay timer val %d", x, cpu->delayTimer);
+    ch8_logDebug("TIMER set V[%d] = delay timer val %d", x, cpu->delayTimer);
 }
 
 // 0xFX0A
 void ch8_op_await_keypress(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
-    log_debug("[FX0A] - Await keypress...");
+    ch8_logDebug("[FX0A] - Await keypress...");
 
     const uint16_t x = (opcode & 0x0F00) >> 8;
 
     ch8_key key;
     if (ch8_awaitKeyPress(cpu, &key) != 0) {
-        log_error("Error awaiting keypress");
+        ch8_logError("Error awaiting keypress");
         return;
     }
 
@@ -385,7 +385,7 @@ void ch8_op_set_delay_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
     const uint16_t x = (opcode & 0x0F00) >> 8;
     cpu->delayTimer = cpu->V[x];
 
-    log_debug("TIMER set delay timer to V[%d] (%d)", x, cpu->delayTimer);
+    ch8_logDebug("TIMER set delay timer to V[%d] (%d)", x, cpu->delayTimer);
 }
 
 // 0xFX18
@@ -396,7 +396,7 @@ void ch8_op_set_sound_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
     const uint16_t x = (opcode & 0x0F00) >> 8;
     cpu->soundTimer = cpu->V[x];
 
-    log_debug("SOUND set sound timer to V[%d] (%d)", x, cpu->soundTimer);
+    ch8_logDebug("SOUND set sound timer to V[%d] (%d)", x, cpu->soundTimer);
 }
 
 // 0xFX1E
@@ -405,7 +405,7 @@ void ch8_op_add_vx_to_I(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
     const uint16_t x = (opcode & 0x0F00) >> 8;
     cpu->index += cpu->V[x];
-    log_debug("[FX1E] - ADD I += V[%d]", x);
+    ch8_logDebug("[FX1E] - ADD I += V[%d]", x);
 }
 
 // 0xFX29
@@ -414,7 +414,7 @@ void ch8_op_set_I_to_sprite_addr(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
     const uint8_t x = (opcode & 0x0F00) >> 8;
     cpu->index = cpu->V[x] * 5;
-    log_debug("[FX29] - SET I = V[%d] * 5 (sprite_addr)", x);
+    ch8_logDebug("[FX29] - SET I = V[%d] * 5 (sprite_addr)", x);
 }
 
 // 0xFX33
@@ -428,7 +428,7 @@ void ch8_op_store_bcd_of_vx(ch8_cpu *cpu, uint16_t opcode)
     cpu->memory[cpu->index + 1] = (uint8_t)(cpu->V[x] % 100) / 10;
     cpu->memory[cpu->index + 2] = (uint8_t)cpu->V[x] % 10;
 
-    log_debug("[FX33] - BCD store V[%d] (%d)", x, cpu->V[x]);
+    ch8_logDebug("[FX33] - BCD store V[%d] (%d)", x, cpu->V[x]);
 }
 
 // 0xFX55
@@ -443,7 +443,7 @@ void ch8_op_store_v0_to_vx(ch8_cpu *cpu, uint16_t opcode)
 
     //cpu->index_register += x + 1;
 
-    log_debug("[FX55] - STORE V[0]..V[%d] in memory", x);
+    ch8_logDebug("[FX55] - STORE V[0]..V[%d] in memory", x);
 }
 
 // 0xFX65
@@ -458,5 +458,5 @@ void ch8_op_fill_v0_to_vx(ch8_cpu *cpu, uint16_t opcode)
 
     //cpu->index_register += x + 1;
 
-    log_debug("[FX55] - FILL memory bytes into V[0]..V[%d]", x);
+    ch8_logDebug("[FX55] - FILL memory bytes into V[0]..V[%d]", x);
 }
