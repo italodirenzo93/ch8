@@ -1,14 +1,10 @@
 #pragma once
 
-#include <string>
-#include <map>
-#include <functional>
-#include <array>
-
 #include <cstdint>
 
 namespace ch8
 {
+    struct CpuState_t;
 
     // CHIP-8 virtual machine CPU
     class Cpu
@@ -28,11 +24,14 @@ namespace ch8
         Cpu& operator=(const Cpu&) = delete;
 
         // Accessors
+        CpuState_t GetState() const noexcept;
         bool IsRunning() const noexcept;
+        address_t GetProgramCounter() const noexcept;
         bool GetPixel(int x, int y) const noexcept;
         opcode_t GetNextOpcode() const noexcept;
 
         // Mutators
+        void SetState(const CpuState_t& state) noexcept;
         void Reset() noexcept;
         void Start() noexcept;
         void Stop() noexcept;
@@ -78,6 +77,16 @@ namespace ch8
         float soundTimerMs;
 
         bool running;
+    };
+
+    struct CpuState_t
+    {
+        Cpu::byte_t memory[Cpu::TotalMemory];
+        Cpu::address_t programCounter;
+        Cpu::address_t indexRegister;
+        Cpu::byte_t stackPointer;
+        Cpu::timer_t delayTimer;
+        Cpu::timer_t soundTimer;
     };
 
 }

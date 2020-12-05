@@ -18,7 +18,7 @@ else()
 find_package(SDL2 REQUIRED)
 endif()
 
-include_directories(${SDL2_INCLUDE_DIRS} include)
+include_directories(${SDL2_INCLUDE_DIRS} "include" "vendor")
 
 # add the executable
 set(HEADERS "include/Cpu.hpp"  "include/Log.hpp" "include/Keypad.hpp")
@@ -26,4 +26,6 @@ add_executable(ch8 ${HEADERS} "src/Main.cpp"  "src/Cpu.cpp" "src/Log.cpp"  "src/
 target_link_libraries(ch8 ${SDL2_LIBRARIES})
 
 # add test executable
-
+enable_testing()
+add_executable(test_cpu ${HEADERS} "test/TestCpu.cpp" "src/Cpu.cpp")
+add_test(NAME "Test CPU" COMMAND test_cpu)

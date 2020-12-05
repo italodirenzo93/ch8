@@ -1,8 +1,7 @@
 #include "Cpu.hpp"
 
 #include <cstdio>
-
-#include "Log.hpp"
+#include <cstring>
 
 // Font data
 static constexpr int FontSize = 80;
@@ -39,9 +38,29 @@ namespace ch8
     }
 
     // Accessors
+    CpuState_t Cpu::GetState() const noexcept
+    {
+        CpuState_t state = { 0 };
+
+        memcpy(state.memory, this->memory, TotalMemory);
+
+        state.programCounter = this->pc;
+        state.indexRegister = this->index;
+        state.stackPointer = this->stackPointer;
+        state.delayTimer = this->delayTimer;
+        state.soundTimer = this->soundTimer;
+
+        return state;
+    }
+
     bool Cpu::IsRunning() const noexcept
     {
         return running;
+    }
+
+    Cpu::address_t Cpu::GetProgramCounter() const noexcept
+    {
+        return pc;
     }
 
     bool Cpu::GetPixel(int x, int y) const noexcept
@@ -70,6 +89,17 @@ namespace ch8
     }
 
     // Mutators
+    void Cpu::SetState(const CpuState_t& state) noexcept
+    {
+        memcpy(memory, state.memory, TotalMemory);
+
+        pc = state.programCounter;
+        index = state.indexRegister;
+        stackPointer = state.stackPointer;
+        delayTimer = state.delayTimer;
+        soundTimer = state.soundTimer;
+    }
+
     void Cpu::Reset() noexcept
     {
         // Initialize all memory to 0
@@ -112,7 +142,7 @@ namespace ch8
 
     bool Cpu::LoadRomFromFile(const char* filename) noexcept
     {
-        log::debug("Loading ROM file %s...", filename);
+        //log::debug("Loading ROM file %s...", filename);
 
         // Open the ROM file for reading
         size_t len = 0;
