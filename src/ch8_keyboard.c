@@ -1,11 +1,11 @@
-#include "keyboard.h"
+#include "ch8_keyboard.h"
 
 #include <assert.h>
 
 #include <SDL_events.h>
 
 #include "ch8_cpu.h"
-#include "log.h"
+#include "ch8_log.h"
 
 ch8_key sdl_keycode_to_key_register(SDL_Keycode keycode)
 {
@@ -105,7 +105,7 @@ int ch8_awaitKeyPress(ch8_cpu *cpu, ch8_key *key)
     SDL_Event event = { 0 };
     while (event.type != SDL_KEYDOWN) {
         if (SDL_WaitEvent(&event) != 1) {
-            log_debug("Error awaiting keypress: %s", SDL_GetError());
+            ch8_logDebug("Error awaiting keypress: %s", SDL_GetError());
             return 1;
         }
     }

@@ -1,25 +1,20 @@
 #include "ch8_cpu.h"
-#include "log.h"
-#include "keyboard.h"
+#include "ch8_log.h"
+#include "ch8_keyboard.h"
 
-int log_init()
-{
-    return 0;
-}
-
-void log_error(const char* fmt, ...)
+void ch8_logError(const char* fmt, ...)
 {
 }
 
-void log_warning(const char* fmt, ...)
+void ch8_logWarning(const char* fmt, ...)
 {
 }
 
-void log_info(const char* fmt, ...)
+void ch8_logInfo(const char* fmt, ...)
 {
 }
 
-void log_debug(const char* fmt, ...)
+void ch8_logDebug(const char* fmt, ...)
 {
 }
 
@@ -40,6 +35,6 @@ bool ch8_isKeyDown(const ch8_cpu* cpu, ch8_key key)
     return false;
 }
 
-void ch8_displayWriteFb()
+void ch8_displayWriteFb(const ch8_cpu* cpu)
 {
 }

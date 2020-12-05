@@ -1,10 +1,10 @@
 #ifndef __KEYBOARD_H__
 #define __KEYBOARD_H__
 
+#include "ch8_cpu.h"
+
 #include <stdbool.h>
 #include <SDL_keyboard.h>
-
-#include "ch8_cpu.h"
 
 #ifdef __cplusplus
 extern "C"
