@@ -4,7 +4,6 @@
 #include "ch8_cpu.h"
 
 #include <stdbool.h>
-#include <SDL_keyboard.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -32,8 +31,6 @@ typedef enum ch8_key
     KEY_F = 0xF,
 } ch8_key;
 
-ch8_key sdl_keycode_to_key_register(SDL_Keycode keycode);
-
 bool ch8_isKeyDown(const ch8_cpu *cpu, ch8_key key);
 bool ch8_isKeyUp(const ch8_cpu *cpu, ch8_key key);
 
@@ -41,6 +38,7 @@ void ch8_setKeyDown(ch8_cpu *cpu, ch8_key key);
 void ch8_setKeyUp(ch8_cpu *cpu, ch8_key key);
 
 int ch8_awaitKeyPress(ch8_cpu *cpu, ch8_key *key);
+void ch8_pollKeyboardInput(ch8_cpu* cpu);
 
 #ifdef __cplusplus
 }
