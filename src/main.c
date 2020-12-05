@@ -89,16 +89,6 @@ static void windowMessageLoop(void)
         case SDL_QUIT:
             exit(EXIT_SUCCESS);
             break;
-        case SDL_KEYDOWN: {
-            const ch8_key key = sdl_keycode_to_key_register(event.key.keysym.sym);
-            ch8_setKeyDown(&cpu, key);
-            break;
-        }
-        case SDL_KEYUP: {
-            const ch8_key key = sdl_keycode_to_key_register(event.key.keysym.sym);
-            ch8_setKeyUp(&cpu, key);
-            break;
-        }
         }
     }
 }
@@ -116,6 +106,7 @@ int main(int argc, char *argv[])
 
         if (ch8_clockCycle(&cpu, elapsed_ms)) {
             ch8_displayClear();
+            ch8_pollKeyboardInput(&cpu);
             ch8_displayPresent();
         }
 
