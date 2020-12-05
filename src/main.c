@@ -9,7 +9,9 @@
 #include "util.h"
 
 ch8_cpu *cpu = NULL;
+
 static SDL_Event event;
+static SDL_Window* window = NULL;
 
 //static const uint8_t program[] = { 0x00, 0xE0 };
 static const uint8_t program[] = {
@@ -29,6 +31,18 @@ static const uint8_t program[] = {
 
 static void initialize(int argc, char* argv[])
 {
+    // Initialize SDL and create window
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
+        fprintf(stderr, "Could not initialize SDL: %s\n", SDL_GetError());
+        exit(EXIT_FAILURE);
+    }
+
+    window = SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 320, 0);
+    if (window == NULL) {
+        fprintf(stderr, "Could not create SDL window: %s\n", SDL_GetError());
+        exit(EXIT_FAILURE);
+    }
+
     // Allocate VM
     cpu = ch8_malloc(sizeof(ch8_cpu));
 
@@ -42,7 +56,7 @@ static void initialize(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (ch8_displayInit() != 0) {
+    if (ch8_displayInit((void*)window) != 0) {
         log_critical("Failed to initialize the display\n");
         exit(EXIT_FAILURE);
     }
@@ -50,7 +64,7 @@ static void initialize(int argc, char* argv[])
     // Load test ROM
     //ch8_load_rom(cpu, program, SDL_arraysize(program));
     // TODO: Get ROM filename from argv
-    if (!ch8_loadRomFile(cpu, "c8_test.c8")) {
+    if (!ch8_loadRomFile(cpu, "test_opcode.c8")) {
         log_critical("Could not load ROM");
         exit(EXIT_FAILURE);
     }
@@ -65,7 +79,7 @@ static void cleanup(void)
     printf("Freed CHIP-8 VM.\n");
 }
 
-static void window_message_loop(void)
+static void windowMessageLoop(void)
 {
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -93,7 +107,7 @@ int main(int argc, char *argv[])
 
     float elapsed_ms = 0.0f;
     while (1) {
-        window_message_loop();
+        windowMessageLoop();
 
         const uint64_t start = SDL_GetPerformanceCounter();
 
