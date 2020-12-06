@@ -1,6 +1,8 @@
 #ifndef __CH8_AUDIO_H__
 #define __CH8_AUDIO_H__
 
+#include "ch8_cpu.h"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -8,9 +10,7 @@ extern "C"
 
 int ch8_audioInit();
 void ch8_audioQuit();
-
-void ch8_beepStart();
-void ch8_beepStop();
+void ch8_audioUpdate(const ch8_cpu* cpu);
 
 #ifdef __cplusplus
 }

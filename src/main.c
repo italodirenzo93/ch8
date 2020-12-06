@@ -59,6 +59,7 @@ static void cleanup(void)
 {
     ch8_displayQuit();
     ch8_audioQuit();
+    ch8_logQuit();
 
     if (window != NULL) {
         SDL_DestroyWindow(window);
@@ -88,24 +89,30 @@ int main(int argc, char *argv[])
     atexit(cleanup);
     initialize(argc, argv);
 
-    float elapsed_ms = 0.0f;
+    float elapsedMs = 0.0f;
     while (1) {
         windowMessageLoop();
 
-        const uint64_t start = SDL_GetPerformanceCounter();
+        uint64_t start, end;
 
-        if (ch8_clockCycle(&cpu, elapsed_ms)) {
-            ch8_displayClear();
+        start = SDL_GetPerformanceCounter();
+
+        if (ch8_clockCycle(&cpu, elapsedMs)) {
             ch8_pollKeyboardInput(&cpu);
+            ch8_displayClear();
+            if (cpu.drawFlag) {
+                ch8_displayWriteFb(&cpu);
+            }
             ch8_displayPresent();
         }
 
-        const uint64_t end = SDL_GetPerformanceCounter();
-        const float elapsed = (float)((end - start) * 1000) / SDL_GetPerformanceFrequency();
+        end = SDL_GetPerformanceCounter();
+
+        float elapsed = (float)((end - start) * 1000) / SDL_GetPerformanceFrequency();
 
         // Cap the framerate to 60hz
         SDL_Delay((Uint32)SDL_floorf(16.666f - elapsed));
 
-        elapsed_ms = elapsed;
+        elapsedMs = elapsed;
     }
 }

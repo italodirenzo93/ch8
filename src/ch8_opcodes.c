@@ -4,8 +4,6 @@
 #include <assert.h>
 #include <string.h>
 
-#include "ch8_display.h"
-#include "ch8_cpu.h"
 #include "ch8_log.h"
 #include "ch8_keyboard.h"
 #include "ch8_util.h"
@@ -314,7 +312,7 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
 
             if(spritePixel) {
                 if(screenPixel) {
-                 cpu->V[0xF] = 1;
+                    cpu->V[0xF] = 1;
                 }
 
                 ch8_setPixel(cpu, x, y, screenPixel == 0 ? true : false);
@@ -322,7 +320,8 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
         }
     }
 
-    ch8_displayWriteFb(cpu);
+    // Set the flag indicating that the framebuffer should be drawn to the screen
+    cpu->drawFlag = true;
 
     ch8_logDebug("[DXYN] - Draw X: %d, Y: %d, N: %d", cpu->V[x], cpu->V[y], n);
 }

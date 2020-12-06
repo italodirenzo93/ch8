@@ -54,14 +54,10 @@ void ch8_audioQuit()
     SDL_CloseAudioDevice(audioDeviceId);
 }
 
-void ch8_beepStart()
+void ch8_audioUpdate(const ch8_cpu* cpu)
 {
     INIT_CHECK;
-    SDL_PauseAudioDevice(audioDeviceId, 0);
-}
-
-void ch8_beepStop()
-{
-    INIT_CHECK;
-    SDL_PauseAudioDevice(audioDeviceId, 1);
+    if (cpu->soundTimer > 0) {
+        SDL_QueueAudio(audioDeviceId, NULL, 0);
+    }
 }

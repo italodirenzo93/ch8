@@ -42,6 +42,7 @@ typedef struct ch8_cpu
     uint8_t soundTimer;
 
     bool keypad[CH8_NUM_KEYS];
+    bool drawFlag;
 } ch8_cpu;
 
 void ch8_reset(ch8_cpu *cpu);
