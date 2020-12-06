@@ -4,6 +4,7 @@
 
 #include "ch8_cpu.h"
 #include "ch8_display.h"
+#include "ch8_audio.h"
 #include "ch8_keyboard.h"
 #include "ch8_log.h"
 #include "ch8_util.h"
@@ -11,22 +12,6 @@
 ch8_cpu cpu = { 0 };
 
 SDL_Window* window = NULL;
-
-//static const uint8_t program[] = { 0x00, 0xE0 };
-static const uint8_t program[] = {
-    0x62, 0x10, // store 10 in V[2]
-    0xF2, 0x15, // set delay timer to V[2]
-    0x62, 0x10, // store 10 in V[2]
-    0x62, 0x10, // store 10 in V[2]
-    0x62, 0x10, // store 10 in V[2]
-    0x62, 0x10, // store 10 in V[2]
-    0x62, 0x10, // store 10 in V[2]
-    0x62, 0x10, // store 10 in V[2]
-    0x62, 0x10, // store 10 in V[2]
-    0x62, 0x10, // store 10 in V[2]
-    0x62, 0x10, // store 10 in V[2]
-    0x62, 0x10, // store 10 in V[2]
-};
 
 static void initialize(int argc, char* argv[])
 {
@@ -57,6 +42,10 @@ static void initialize(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
+    if (ch8_audioInit() != 0) {
+        ch8_logCritical("Failed to initialize audio");
+    }
+
     // Load test ROM
     //ch8_load_rom(cpu, program, SDL_arraysize(program));
     // TODO: Get ROM filename from argv
@@ -69,6 +58,7 @@ static void initialize(int argc, char* argv[])
 static void cleanup(void)
 {
     ch8_displayQuit();
+    ch8_audioQuit();
 
     if (window != NULL) {
         SDL_DestroyWindow(window);
