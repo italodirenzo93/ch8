@@ -65,15 +65,11 @@ void ch8_displayQuit()
     initialized = false;
 }
 
-void ch8_displayClear()
+void ch8_displayUpdate()
 {
     INIT_CHECK();
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
-}
-
-void ch8_displayPresent()
-{
-    INIT_CHECK();
     SDL_RenderCopy(renderer, display, NULL, NULL);
     SDL_RenderPresent(renderer);
 }
