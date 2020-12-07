@@ -1,5 +1,5 @@
-#ifndef __CH8_CPU_H__
-#define __CH8_CPU_H__
+#ifndef __CPU_H__
+#define __CPU_H__
 
 #include <stdlib.h>
 #include <stdint.h>

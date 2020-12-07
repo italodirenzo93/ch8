@@ -99,11 +99,10 @@ int main(int argc, char *argv[])
 
         if (ch8_clockCycle(&cpu, elapsedMs)) {
             ch8_pollKeyboardInput(&cpu);
-            ch8_displayClear();
             if (cpu.drawFlag) {
                 ch8_displayWriteFb(&cpu);
             }
-            ch8_displayPresent();
+            ch8_displayUpdate();
         }
 
         end = SDL_GetPerformanceCounter();
@@ -111,7 +110,7 @@ int main(int argc, char *argv[])
         float elapsed = (float)((end - start) * 1000) / SDL_GetPerformanceFrequency();
 
         // Cap the framerate to 60hz
-        SDL_Delay((Uint32)SDL_floorf(16.666f - elapsed));
+        //SDL_Delay((Uint32)SDL_floorf(16.666f - elapsed));
 
         elapsedMs = elapsed;
     }

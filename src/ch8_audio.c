@@ -16,17 +16,16 @@ void __audioCallback(void* userdata, Uint8* stream, int len)
 {
     Sint16 *buffer = (Sint16*)stream;
     len = len / 2; // 2 bytes per sample for AUDIO_S16SYS
-
     for (int i = 0; i < len; i++, sampleNr++) {
         double time = (double)sampleNr / (double)SAMPLE_RATE;
-        buffer[i] = (Sint16)(AMPLITUDE * sin(2.0f * M_PI * 441.0f * time)); // render 441 HZ sine wave
+        buffer[i] = (Sint16)(AMPLITUDE * SDL_sin(2.0f * M_PI * 441.0f * time)); // render 441 HZ sine wave
     }
 }
 
 int ch8_audioInit()
 {
     if (audioDeviceId != 0) {
-        return;
+        return 1;
     }
 
     SDL_AudioSpec want, have;

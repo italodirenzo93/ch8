@@ -10,8 +10,7 @@ extern "C"
 
 int ch8_displayInit(void* handle);
 void ch8_displayQuit();
-void ch8_displayClear();
-void ch8_displayPresent();
+void ch8_displayUpdate();
 void ch8_displayWriteFb(const ch8_cpu *cpu);
 
 #ifdef __cplusplus
