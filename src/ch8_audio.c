@@ -29,14 +29,13 @@ int ch8_audioInit()
     }
 
     SDL_AudioSpec want, have;
-    SDL_AudioDeviceID dev;
 
-    SDL_memset(&want, 0, sizeof(want)); /* or SDL_zero(want) */
+    SDL_memset(&want, 0, sizeof(want));
     want.freq = 44100;
     want.format = AUDIO_S16SYS;
     want.channels = 1;
     want.samples = 2048;
-    want.callback = __audioCallback; /* you wrote this function elsewhere -- see SDL_AudioSpec for details */
+    want.callback = __audioCallback;
 
     audioDeviceId = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
     if (audioDeviceId == 0) {
@@ -56,7 +55,6 @@ void ch8_audioQuit()
 void ch8_audioUpdate(const ch8_cpu* cpu)
 {
     INIT_CHECK;
-    if (cpu->soundTimer > 0) {
-        SDL_QueueAudio(audioDeviceId, NULL, 0);
-    }
+    int paused = cpu->soundTimer != 0 ? 0 : 1;
+    SDL_PauseAudioDevice(audioDeviceId, paused);
 }
