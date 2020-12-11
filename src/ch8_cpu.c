@@ -30,23 +30,6 @@ static const uint8_t font[] = {
 #define CH8_FONT_SIZE 80
 // clang-format on
 
-static float delayTimerVal = 0.0f;
-static float soundTimerVal = 0.0f;
-
-static void __ch8_updateTimer(uint8_t *timer, float *accumulator, float elapsed_ms)
-{
-    assert(timer != NULL);
-    assert(accumulator != NULL);
-    if (*timer != 0) {
-        *accumulator += elapsed_ms;
-        if (*accumulator >= 16.666f) {
-            *timer -= 1;
-            *accumulator = 0.0f;
-            printf("Accum: %f\n", *accumulator);
-        }
-    }
-}
-
 void ch8_reset(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
@@ -303,10 +286,6 @@ bool ch8_clockCycle(ch8_cpu *cpu, float elapsed_ms)
 
     // Advance the program counter 2 bytes at a time
     cpu->programCounter += CH8_PC_STEP_SIZE;
-
-    // Update timers
-    __ch8_updateTimer(&cpu->delayTimer, &delayTimerVal, elapsed_ms);
-    __ch8_updateTimer(&cpu->soundTimer, &soundTimerVal, elapsed_ms);
 
     return true;
 }
