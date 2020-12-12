@@ -49,7 +49,7 @@ static void initialize(int argc, char* argv[])
     // Load test ROM
     //ch8_load_rom(cpu, program, SDL_arraysize(program));
     // TODO: Get ROM filename from argv
-    if (!ch8_loadRomFile(&cpu, "test_opcode.ch8")) {
+    if (!ch8_loadRomFile(&cpu, "assets/BC_test.ch8")) {
         ch8_logCritical("Could not load ROM");
         exit(EXIT_FAILURE);
     }
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
         float elapsed = (float)((end - start) * 1000) / SDL_GetPerformanceFrequency();
 
         // Cap the framerate to 60hz
-        SDL_Delay((Uint32)SDL_floorf(16.666f - elapsed));
+        //SDL_Delay((Uint32)SDL_floorf(16.666f - elapsed));
 
         // Update timers
         cpu.delayTimer = ch8_max(cpu.delayTimer - 1, 0);

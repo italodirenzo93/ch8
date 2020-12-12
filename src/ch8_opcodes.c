@@ -229,9 +229,11 @@ void ch8_op_bitshift_left_vx_to_vf(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
 
-    const uint8_t x = (opcode & 0x0F00) >> 8;
-    cpu->V[0xF] = cpu->V[x] & 0x80;
-    cpu->V[x] <<= 1;
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    uint8_t y = (opcode & 0x00F0) >> 4;
+
+    cpu->V[0xF] = (cpu->V[x] >> 7) & 0x1;
+    cpu->V[x] = cpu->V[y] << 1;
 
     ch8_logDebug("[8XYE] - SHIFTL V[%d] <<= 1", x);
 }

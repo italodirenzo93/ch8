@@ -145,7 +145,7 @@ bool ch8_clockCycle(ch8_cpu *cpu, float elapsed_ms)
     // Jump to adresss
     case 0x1000:
         ch8_op_jumpto(cpu, opcode);
-        break;
+        return true;
     // Call ROM subroutine
     case 0x2000:
         ch8_op_callsub(cpu, opcode);
