@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # set the project name
-project(ch8 C)
-set(CMAKE_C_STANDARD 11)
+project(ch8)
 
 # SDL2
 if (WIN32)
@@ -20,7 +19,7 @@ add_executable(ch8 ${HEADERS} "src/main.c" "src/ch8_cpu.c" "src/ch8_opcodes.c" "
 target_link_libraries(ch8 ${SDL2_LIBRARIES})
 
 # copy test ROM file
-file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/assets/test_opcode.ch8" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+file(COPY "assets" DESTINATION "${CMAKE_BINARY_DIR}")
 
 # add test executable
 add_executable(test_opcodes "test/vendor/unity.c" "test/test_opcodes.c" "test/test_stubs.c" "src/ch8_opcodes.c" "src/ch8_cpu.c")
