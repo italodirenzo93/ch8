@@ -4,6 +4,7 @@
 #include "ch8_display.h"
 #include "ch8_cpu.h"
 #include "ch8_keyboard.h"
+#include "ch8_util.h"
 
 ch8_cpu chip8;
 
@@ -16,273 +17,517 @@ void tearDown()
 {
 }
 
-static void return_from_subroutine_sets_pc_to_last_stack_address(void)
+// 00E0
+static void test_00E0_ClearScreen_SetsAllPixelsTo0(void)
 {
-    const uint16_t addr = 0xE21F;
-    chip8.stack[7] = addr;
-    chip8.stackPointer = 8;
-    
-    ch8_op_return(&chip8);
-    
+    // arrange
+    for (int i = 0; i < CH8_DISPLAY_SIZE; i++) {
+        chip8.framebuffer[i] = ch8_randU8();
+    }
+
+    // act
+    ch8_op_ClearDisplay(&chip8);
+
+    // assert
+    TEST_ASSERT_EACH_EQUAL_UINT8(0, chip8.framebuffer, CH8_DISPLAY_SIZE);
+}
+
+// 00EE
+static void test_00EE_ReturnFromSubroutine_SetsProgramCounterToStackTop(void)
+{
+    // arrange
+    u16 addr = 0x0123;
+
+    chip8.stack[0] = ch8_randU16();
+    chip8.stack[1] = ch8_randU16();
+    chip8.stack[2] = addr;
+    chip8.stackPointer = 2;
+
+    // act
+    ch8_op_ReturnFromSub(&chip8);
+
+    // assert
     TEST_ASSERT_EQUAL(addr, chip8.programCounter);
-    TEST_ASSERT_EQUAL(7, chip8.stackPointer);
+    TEST_ASSERT_EQUAL(1, chip8.stackPointer);
 }
 
-static void jumpto_sets_pc_to_address(void)
+// 1NNN
+static void test_1NNN_Jump_SetsProgramCounterToAddress(void)
 {
-    const uint16_t opcode = 0x1323;
-    const uint16_t addr = opcode & 0x0FFF;
-    ch8_op_jumpto(&chip8, opcode);
+    // arrange
+    u16 opcode = 0x1323;
+    u16 addr = 0x323;
+
+    // act
+    ch8_op_JumpTo(&chip8, opcode);
+
+    // assert
     TEST_ASSERT_EQUAL(addr, chip8.programCounter);
 }
 
-static void cond_eq_skips_next_instruction_if_equal(void)
+// 2NNN
+static void test_2NNN_CallSub_SetsProgramCounterToAddress(void)
 {
-    const uint16_t opcode = 0x2305;
-    const uint8_t vx = (opcode & 0x0F00) >> 8;
+    // arrange
+    u16 opcode = 0x2333;
+    u16 addr = 0x333;
 
-    chip8.programCounter = 144;
-    chip8.V[vx] = 5;
+    chip8.programCounter = 0x204;
 
-    ch8_op_cond_eq(&chip8, opcode);
-    TEST_ASSERT_EQUAL(146, chip8.programCounter);
+    // act
+    ch8_op_CallSub(&chip8, opcode);
+
+    // assert
+    TEST_ASSERT_EQUAL(addr, chip8.programCounter);
 }
 
-static void cond_eq_does_not_skip_next_instruction_if_unequal(void)
+static void test_2NNN_CallSub_PushesTheCurrentAddressOntoStack(void)
 {
-    const uint16_t opcode = 0x23EE;
-    const uint8_t vx = (opcode & 0x0F00) >> 8;
+    // arrange
+    chip8.stack[0] = ch8_randU16();
+    chip8.stack[1] = ch8_randU16();
+    chip8.stack[2] = ch8_randU16();
 
-    chip8.programCounter = 144;
-    chip8.V[vx] = 5;
+    chip8.stackPointer = 2;
+    chip8.programCounter = 0x222;
 
-    ch8_op_cond_eq(&chip8, opcode);
-    TEST_ASSERT_EQUAL(144, chip8.programCounter);
+    // act
+    ch8_op_CallSub(&chip8, 0x2123);
+
+    // assert
+    TEST_ASSERT_EQUAL(3, chip8.stackPointer);
+    TEST_ASSERT_EQUAL(0X222, chip8.stack[chip8.stackPointer]);
 }
 
-static void cond_neq_skips_next_instruction_if_nequal(void)
+// 3XNN
+static void test_3XNN_SkipEquals_SkipsTheNextInstructionIfEqualNN(void)
 {
-    const uint16_t opcode = 0x23FF;
-    const uint8_t vx = (opcode & 0x0F00) >> 8;
+    // arrange
+    u16 opcode = 0x2305;
+    u8 vx = 0x3;
 
-    chip8.programCounter = 144;
+    chip8.programCounter = 0x235;
+    chip8.V[vx] = 0x5;
+
+    // act
+    ch8_op_SkipEquals(&chip8, opcode);
+
+    // assert
+    // Skips the next instruction and then advances the program counter
+    TEST_ASSERT_EQUAL(0x239, chip8.programCounter);
+}
+
+static void test_3XNN_SkipEquals_DoesNotSkipIfNotEqualNN(void)
+{
+    // arrange
+    u16 opcode = 0x2305;
+    u8 vx = 0x3;
+
+    chip8.programCounter = 0x235;
+    chip8.V[vx] = 0x6;
+
+    // act
+    ch8_op_SkipEquals(&chip8, opcode);
+
+    // assert
+    // Advances the program counter but does not skip the next instruction
+    TEST_ASSERT_EQUAL(0x237, chip8.programCounter);
+}
+
+// 4XNN
+static void test_4XNN_SkipNotEquals_SkipsTheNextInstructionIfNotEqualNN(void)
+{
+    // arrange
+    u16 opcode = 0x2301;
+    u8 vx = 0x1;
+
+    chip8.programCounter = 0x203;
     chip8.V[vx] = 27;
 
-    ch8_op_cond_neq(&chip8, opcode);
+    // act
+    ch8_op_SkipNotEquals(&chip8, opcode);
+
+    // assert
+    TEST_ASSERT_EQUAL(0x207, chip8.programCounter);
+}
+
+static void test_4XNN_SkipNotEquals_DoesNotSkipNextInstructionIfEqualNN(void)
+{
+    // arrange
+    u16 opcode = 0x23FF;
+    u8 vx = 0x2;
+
+    chip8.programCounter = 0x203;
+    chip8.V[vx] = 3;
+
+    // act
+    ch8_op_SkipNotEquals(&chip8, opcode);
+
+    // assert
+    TEST_ASSERT_EQUAL(0x207, chip8.programCounter);
+}
+
+// 5XY0
+static void test_5XYN_SkipVXEqualsVY_SkipsNextInstructionIfVXEqualsVY(void)
+{
+    chip8.programCounter = 144;
+    chip8.V[2] = 255;
+    chip8.V[3] = 255;
+
+    ch8_op_SkipVXEqualsVY(&chip8, 0x5230);
+    TEST_ASSERT_EQUAL(148, chip8.programCounter);
+}
+
+static void test_5XYN_SkipVXEqualsVY_DoesNotSkipNextInstructionIfVXDoesNotEqualVY(void)
+{
+    chip8.programCounter = 144;
+    chip8.V[2] = 255;
+    chip8.V[3] = 254;
+
+    ch8_op_SkipVXEqualsVY(&chip8, 0x5230);
     TEST_ASSERT_EQUAL(146, chip8.programCounter);
 }
 
-static void cond_neq_does_not_skip_next_instruction_if_equal(void)
+// 6XNN
+static void test_6XNN_Set_SetsVXToNN(void)
 {
-    const uint16_t opcode = 0x23FF;
-    const uint8_t vx = (opcode & 0x0F00) >> 8;
-
-    chip8.programCounter = 144;
-    chip8.V[vx] = 255;
-
-    ch8_op_cond_neq(&chip8, opcode);
-    TEST_ASSERT_EQUAL(144, chip8.programCounter);
+    chip8.programCounter = 212;
+    ch8_op_Set(&chip8, 0X71E);
+    TEST_ASSERT_EQUAL(0x1E, chip8.V[7]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
 }
 
-static void cond_vx_eq_vy_skips_next_instruction_if_equal(void)
+// 7XNN
+static void test_7XNN_Add_AddsNNToVX(void)
 {
-    const uint16_t opcode = 0x23FF;
-    const uint8_t vx = (opcode & 0x0F00) >> 8;
-    const uint8_t vy = (opcode & 0x00F0) >> 4;
-
-    chip8.programCounter = 144;
-    chip8.V[vx] = 255;
-    chip8.V[vy] = 255;
-
-    ch8_op_cond_vx_eq_vy(&chip8, opcode);
-    TEST_ASSERT_EQUAL(146, chip8.programCounter);
-}
-
-static void cond_vx_eq_vy_does_not_skip_next_instruction_if_unequal(void)
-{
-    const uint16_t opcode = 0x23FF;
-    const uint8_t vx = (opcode & 0x0F00) >> 8;
-    const uint8_t vy = (opcode & 0x00F0) >> 4;
-
-    chip8.programCounter = 144;
-    chip8.V[vx] = 255;
-    chip8.V[vy] = 254;
-
-    ch8_op_cond_vx_eq_vy(&chip8, opcode);
-    TEST_ASSERT_EQUAL(144, chip8.programCounter);
-}
-
-static void const_set_sets_vx_to_value(void)
-{
-    const uint16_t opcode = 0x670C;
-    ch8_op_const_set(&chip8, opcode);
-    TEST_ASSERT_EQUAL(12, chip8.V[7]);
-}
-
-static void const_add_adds_value_to_vx(void)
-{
-    const uint16_t opcode = 0x780C;
     chip8.V[8] = 4;
-    ch8_op_const_add(&chip8, opcode);
+    chip8.programCounter = 212;
+    ch8_op_Add(&chip8, 0x780C);
     TEST_ASSERT_EQUAL(16, chip8.V[8]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
 }
 
-static void assign_vx_to_vy(void)
+// 8XY0
+static void test_8XY0_Assign_SetsVXToVY(void)
 {
     chip8.V[3] = 45;
     chip8.V[6] = 0;
-    ch8_op_assign(&chip8, 0x8630);
+    chip8.programCounter = 212;
+    ch8_op_Assign(&chip8, 0x8630);
     TEST_ASSERT_EQUAL(45, chip8.V[6]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
 }
 
-static void bitwise_or(void)
+static void test_8XY1_LogicalOr_SetsVXToVXOrVY(void)
 {
     chip8.V[8] = 1;
     chip8.V[1] = 2;
-    ch8_op_or(&chip8, 0x8811);
+    chip8.programCounter = 212;
+    ch8_op_LogicalOr(&chip8, 0x8811);
     TEST_ASSERT_EQUAL(3, chip8.V[8]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
 }
 
-static void bitwise_and(void)
+// 8XY2
+static void test_8XY2_LogicalAnd_SetsVXToVXAndVY(void)
 {
     chip8.V[8] = 0x11;
     chip8.V[1] = 0xF3;
-    ch8_op_and(&chip8, 0x8812);
+    chip8.programCounter = 212;
+    ch8_op_LogicalAnd(&chip8, 0x8812);
     TEST_ASSERT_EQUAL(17, chip8.V[8]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
 }
 
-static void bitwise_xor(void)
+// 8XY3
+static void test_8XY3_LogicalXor_SetsVXToVXXorVY(void)
 {
     chip8.V[2] = 0x34;
     chip8.V[3] = 0x32;
-    ch8_op_xor(&chip8, 0x8233);
+    chip8.programCounter = 212;
+    ch8_op_LogicalXor(&chip8, 0x8233);
     TEST_ASSERT_EQUAL(6, chip8.V[2]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
 }
 
-// 0x8XY4
-static void add_vx_to_vy_sets_carry_to_1_if_overflow(void)
+// 8XY4
+static void test_8XY4_Add_SetsCarryTo1IfOverflow(void)
 {
     chip8.V[0] = 150;
     chip8.V[1] = 150;
     chip8.V[0xF] = 0;
 
-    ch8_op_add_vx_to_vy(&chip8, 0x8014);
+    chip8.programCounter = 212;
+
+    ch8_op_AddAssign(&chip8, 0x8014);
 
     TEST_ASSERT_EQUAL(44, chip8.V[0]);  // should overflow
     TEST_ASSERT_EQUAL(1, chip8.V[0xF]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
 }
 
-static void add_vx_to_vy_sets_carry_to_0_if_no_overflow(void)
+static void test_8XY4_Add_SetsCarryTo0IfNoOverflow(void)
 {
     chip8.V[0] = 75;
     chip8.V[1] = 25;
     chip8.V[0xF] = 0;
 
-    ch8_op_add_vx_to_vy(&chip8, 0x8014);
+    chip8.programCounter = 212;
+
+    ch8_op_AddAssign(&chip8, 0x8014);
 
     TEST_ASSERT_EQUAL(100, chip8.V[0]); // no overflow
     TEST_ASSERT_EQUAL(0, chip8.V[0xF]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
 }
 
-// 0x8XY5
-static void sub_vy_from_vx_sets_borrow_to_0_if_underflow(void)
+// 8XY5
+static void test_8XY5_SubtractAssign_SetsBorrowTo0IfUnderflow(void)
 {
     chip8.V[0] = 6;
     chip8.V[1] = 7;
     chip8.V[0xF] = 0;
 
-    ch8_op_sub_vy_from_vx(&chip8, 0x8015);
+    chip8.programCounter = 212;
+
+    ch8_op_SubtractAssign(&chip8, 0x8015);
 
     TEST_ASSERT_EQUAL(255, chip8.V[0]); // should underflow
     TEST_ASSERT_EQUAL(0, chip8.V[0xF]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
 }
 
-static void sub_vy_from_vx_sets_borrow_to_1_if_no_underflow(void)
+static void test_8XY5_SubtractAssign_SetsBorrowTo1IfNoUnderflow(void)
 {
     chip8.V[0] = 7;
     chip8.V[1] = 3;
     chip8.V[0xF] = 0;
 
-    ch8_op_sub_vy_from_vx(&chip8, 0x8015);
+    chip8.programCounter = 212;
+
+    ch8_op_SubtractAssign(&chip8, 0x8015);
 
     TEST_ASSERT_EQUAL(4, chip8.V[0]);
     TEST_ASSERT_EQUAL(1, chip8.V[0xF]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
 }
 
-static void set_i_to_address(void)
+// 8XY6
+
+// 8XY7
+static void test_8XY7_SubtractAssignReverse_SetsBorrowTo0IfUnderflow(void)
 {
-    ch8_op_set_addr(&chip8, 0xA3FF);
+    chip8.V[0] = 7;
+    chip8.V[1] = 4;
+
+    chip8.programCounter = 212;
+
+    ch8_op_SubtractAssignReverse(&chip8, 0x8015);
+
+    TEST_ASSERT_EQUAL(253, chip8.V[0]); // should underflow
+    TEST_ASSERT_EQUAL(0, chip8.V[0xF]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
+}
+
+static void test_8XY7_SubtractAssignReverse_SetsBorrowTo1IfNoUnderflow(void)
+{
+    chip8.V[0] = 3;
+    chip8.V[1] = 7;
+    chip8.V[0xF] = 0;
+
+    chip8.programCounter = 212;
+
+    ch8_op_SubtractAssignReverse(&chip8, 0x8015);
+
+    TEST_ASSERT_EQUAL(4, chip8.V[0]);
+    TEST_ASSERT_EQUAL(1, chip8.V[0xF]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
+}
+
+// 8XYE
+
+// 9XYE
+static void test_9XYN_SkipVXNotEqualsVY_SkipsNextInstructionIfVXNotEqualsVY(void)
+{
+    chip8.programCounter = 144;
+    chip8.V[2] = 255;
+    chip8.V[3] = 254;
+
+    ch8_op_SkipVXNotEqualsVY(&chip8, 0x9230);
+    TEST_ASSERT_EQUAL(148, chip8.programCounter);
+}
+
+static void test_9XYN_SkipVXNotEqualsVY_DoesNotSkipNextInstructionIfVXEqualsVY(void)
+{
+    chip8.programCounter = 144;
+    chip8.V[2] = 255;
+    chip8.V[3] = 255;
+
+    ch8_op_SkipVXNotEqualsVY(&chip8, 0x9230);
+    TEST_ASSERT_EQUAL(146, chip8.programCounter);
+}
+
+// A000
+static void test_ANNN_SetIndex_SetsTheIndexRegisterToNNN(void)
+{
+    chip8.programCounter = 212;
+    ch8_op_SetIndex(&chip8, 0xA3FF);
     TEST_ASSERT_EQUAL(0x03FF, chip8.index);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
 }
 
-static void jump_to_addr_plus_v0(void)
+// BXNN
+static void test_BXNN_JumpOffset_SetsPCToNNPlusVX(void)
 {
-    chip8.V[0] = 0x04;
-    ch8_jump_to_addr_plus_v0(&chip8, 0xB199);
-    TEST_ASSERT_EQUAL(413, chip8.programCounter);
+    chip8.V[1] = 0x04;
+    ch8_op_JumpOffset(&chip8, 0xB199);
+    TEST_ASSERT_EQUAL(157, chip8.programCounter);
 }
 
-// 0xEX9E
-static void key_down_skip_next_instruction(void)
+// CXNN
+static void test_CXNN_BitwiseRandom_AdvancesProgramCounter(void)
+{
+    chip8.programCounter = 212;
+
+    ch8_op_BitwiseRandom(&chip8, 0xC422);
+
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
+}
+
+// DXYN
+static void test_DXYN_DrawSprite_SetsTheDrawFlag(void)
+{
+    chip8.programCounter = 212;
+    chip8.drawFlag = false;
+
+    ch8_op_DrawSprite(&chip8, 0xD142);
+
+    TEST_ASSERT_TRUE(chip8.drawFlag);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
+}
+
+// EX9E
+static void test_EX9E_KeyDown_SkipsNextInstructionIfKeyIsDown(void)
 {
     chip8.keypad[8] = true;
     chip8.programCounter = 5;
-    ch8_op_keyop_eq(&chip8, 0xE800);
-    TEST_ASSERT_EQUAL(7, chip8.programCounter);
+
+    ch8_op_KeyEquals(&chip8, 0xE89E);
+
+    TEST_ASSERT_EQUAL(9, chip8.programCounter); // skips the next instruction on top of advancing the counter
 }
 
-static void key_down_does_not_skip_next_instruction(void)
+static void test_EX9E_KeyDown_DoesNotSkipNextInstructionIfKeyUp(void)
 {
     chip8.keypad[8] = true;
     chip8.keypad[4] = false;
     chip8.programCounter = 5;
-    ch8_op_keyop_eq(&chip8, 0xE400);
-    TEST_ASSERT_EQUAL(5, chip8.programCounter);
+
+    ch8_op_KeyEquals(&chip8, 0xE49E);
+
+    TEST_ASSERT_EQUAL(7, chip8.programCounter); // advancing the program counter only once
 }
 
-// 0xEXA1
-static void key_up_skip_next_instruction(void)
+// EXA1
+static void test_EXA1_KeyUp_SkipsNextInstructionIfKeyUp(void)
 {
-    chip8.keypad[8] = true;
+    chip8.keypad[8] = false;
+    chip8.keypad[2] = true;
     chip8.programCounter = 5;
-    ch8_op_keyop_neq(&chip8, 0xE800);
-    TEST_ASSERT_EQUAL(5, chip8.programCounter);
+
+    ch8_op_KeyNotEquals(&chip8, 0xE8A1);
+
+    TEST_ASSERT_EQUAL(9, chip8.programCounter);
 }
 
-static void key_up_does_not_skip_next_instruction(void)
+static void test_EXA1_KeyUp_DoesNotSkipNextInstructionIfKeyDown(void)
 {
-    chip8.keypad[9] = true;
-    chip8.keypad[4] = false;
+    chip8.keypad[4] = true;
     chip8.programCounter = 5;
-    ch8_op_keyop_neq(&chip8, 0xE400);
+
+    ch8_op_KeyNotEquals(&chip8, 0xE4A1);
+
     TEST_ASSERT_EQUAL(7, chip8.programCounter);
 }
 
-// 0xFX0A
-static void test_awaitKeypressSetsWaitFlagAndRegister(void)
+// FX07
+static void test_FX07_ReadDelayTimer_StoresValueOfDelayTimerInVX(void)
 {
-    ch8_op_await_keypress(&chip8, 0xFE0A);
+    chip8.delayTimer = 56;
+    chip8.programCounter = 212;
+
+    ch8_op_ReadDelayTimer(&chip8, 0xF707);
+
+    TEST_ASSERT_EQUAL(56, chip8.V[7]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
+}
+
+// FX0A
+static void test_FX0A_KeyAwait_SetsWaitFlagAndRegister(void)
+{
+    ch8_op_KeyWait(&chip8, 0xFE0A);
     TEST_ASSERT_TRUE(chip8.waitFlag);
     TEST_ASSERT_EQUAL(0xE, chip8.waitReg);
 }
 
-// 0xFX33
-static void test_store_bcd_of_vx_at_i(void)
+// FX15
+static void test_FX15_SetDelayTimer_SetsDelayTimerToValueInVX(void)
+{
+    chip8.programCounter = 212;
+    chip8.V[9] = 44;
+
+    ch8_op_SetDelayTimer(&chip8, 0xF915);
+
+    TEST_ASSERT_EQUAL(44, chip8.delayTimer);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
+}
+
+// FX18
+static void test_FX18_SetSoundTimer_SetsSoundTimerToValueInVX(void)
+{
+    chip8.programCounter = 212;
+    chip8.V[9] = 44;
+
+    ch8_op_SetSoundTimer(&chip8, 0xF918);
+
+    TEST_ASSERT_EQUAL(44, chip8.soundTimer);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
+}
+
+// FX1E
+static void test_FX1E_AddToIndex_AddsVXToTheIndex(void)
+{
+    chip8.programCounter = 212;
+    chip8.V[4] = 10;
+    chip8.V[0xF] = 1;   // should not be affected
+    chip8.index = 11;
+
+    ch8_op_AddToIndex(&chip8, 0xF41E);
+
+    TEST_ASSERT_EQUAL(21, chip8.index);
+    TEST_ASSERT_EQUAL(1, chip8.V[0xF]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
+}
+
+// FX33
+static void test_FX33_StoreBinaryCodedDecimal_StoresTheCorrectBCDRepresentation(void)
 {
     chip8.V[3] = 255;
     chip8.index = 764;
+    chip8.programCounter = 212;
 
-    ch8_op_store_bcd_of_vx(&chip8, 0xF333);
+    ch8_op_StoreBinaryCodedDecimal(&chip8, 0xF333);
 
     TEST_ASSERT_EQUAL(2, chip8.memory[chip8.index]);
     TEST_ASSERT_EQUAL(5, chip8.memory[chip8.index + 1]);
     TEST_ASSERT_EQUAL(5, chip8.memory[chip8.index + 2]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
 }
 
-// 0xFX55
-static void test_store_V0_to_Vx(void)
+// FX55
+static void test_FX55_Store_StoresV0ToVXInMemory(void)
 {
-    const uint16_t start_addr = 2078; /* random memory offset */
+    u16 start_addr = 2078; /* random memory offset */
 
     chip8.index = start_addr;
     chip8.V[0] = 5;
@@ -290,20 +535,23 @@ static void test_store_V0_to_Vx(void)
     chip8.V[2] = 22;
     chip8.V[3] = 144;
 
-    ch8_op_store_v0_to_vx(&chip8, 0xF355);
+    chip8.programCounter = 212;
+
+    ch8_op_Store(&chip8, 0xF355);
 
     TEST_ASSERT_EQUAL(5, chip8.memory[start_addr]);
     TEST_ASSERT_EQUAL(4, chip8.memory[start_addr + 1]);
     TEST_ASSERT_EQUAL(22, chip8.memory[start_addr + 2]);
     TEST_ASSERT_EQUAL(144, chip8.memory[start_addr + 3]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
 
     //TEST_ASSERT_EQUAL(2083, chip8.index_register); /* I = I + x + 1 */
 }
 
-// 0xFX65
-static void test_fill_V0_to_Vx(void)
+// FX65
+static void test_FX65_Load_LoadsV0ToVXFromMemory(void)
 {
-    const uint16_t start_addr = 2078; /* random memory offset */
+    u16 start_addr = 2078; /* random memory offset */
 
     chip8.index = start_addr;
     chip8.memory[start_addr] = 5;
@@ -311,12 +559,15 @@ static void test_fill_V0_to_Vx(void)
     chip8.memory[start_addr + 2] = 22;
     chip8.memory[start_addr + 3] = 144;
 
-    ch8_op_fill_v0_to_vx(&chip8, 0xF365);
+    chip8.programCounter = 212;
+
+    ch8_op_Load(&chip8, 0xF365);
 
     TEST_ASSERT_EQUAL(5, chip8.V[0]);
     TEST_ASSERT_EQUAL(4, chip8.V[1]);
     TEST_ASSERT_EQUAL(22, chip8.V[2]);
     TEST_ASSERT_EQUAL(144, chip8.V[3]);
+    TEST_ASSERT_EQUAL(214, chip8.programCounter);
 
     //TEST_ASSERT_EQUAL(2083, chip8.index_register); /* I = I + x + 1 */
 }
@@ -325,59 +576,87 @@ int main()
 {
     UnityBegin("test/test_opcodes.c");
 
+    // 00E0
+    RUN_TEST(test_00E0_ClearScreen_SetsAllPixelsTo0);
+    // 00EE
+    RUN_TEST(test_00EE_ReturnFromSubroutine_SetsProgramCounterToStackTop);
+
     // 1NNN
-    RUN_TEST(return_from_subroutine_sets_pc_to_last_stack_address);
-    RUN_TEST(jumpto_sets_pc_to_address);
+    RUN_TEST(test_1NNN_Jump_SetsProgramCounterToAddress);
+
+    // 2NNN
+    RUN_TEST(test_2NNN_CallSub_SetsProgramCounterToAddress);
+    RUN_TEST(test_2NNN_CallSub_PushesTheCurrentAddressOntoStack);
 
     // 3XNN
-    RUN_TEST(cond_eq_skips_next_instruction_if_equal);
-    RUN_TEST(cond_eq_does_not_skip_next_instruction_if_unequal);
+    RUN_TEST(test_3XNN_SkipEquals_SkipsTheNextInstructionIfEqualNN);
+    RUN_TEST(test_3XNN_SkipEquals_DoesNotSkipIfNotEqualNN);
 
     // 4XNN
-    RUN_TEST(cond_neq_skips_next_instruction_if_nequal);
-    RUN_TEST(cond_neq_does_not_skip_next_instruction_if_equal);
+    RUN_TEST(test_4XNN_SkipNotEquals_SkipsTheNextInstructionIfNotEqualNN);
+    RUN_TEST(test_4XNN_SkipNotEquals_DoesNotSkipNextInstructionIfEqualNN);
 
     // 5XY0
-    RUN_TEST(cond_vx_eq_vy_skips_next_instruction_if_equal);
-    RUN_TEST(cond_vx_eq_vy_does_not_skip_next_instruction_if_unequal);
+    RUN_TEST(test_5XYN_SkipVXEqualsVY_SkipsNextInstructionIfVXEqualsVY);
+    RUN_TEST(test_5XYN_SkipVXEqualsVY_DoesNotSkipNextInstructionIfVXDoesNotEqualVY);
 
     // 6XNN
-    RUN_TEST(const_set_sets_vx_to_value);
+    RUN_TEST(test_6XNN_Set_SetsVXToNN);
 
     // 7XNN
-    RUN_TEST(const_add_adds_value_to_vx);
+    RUN_TEST(test_7XNN_Add_AddsNNToVX);
 
     // 8XY0
-    RUN_TEST(assign_vx_to_vy);
-    RUN_TEST(bitwise_or);
-    RUN_TEST(bitwise_and);
-    RUN_TEST(bitwise_xor);
-    RUN_TEST(add_vx_to_vy_sets_carry_to_1_if_overflow);
-    RUN_TEST(add_vx_to_vy_sets_carry_to_0_if_no_overflow);
-    RUN_TEST(sub_vy_from_vx_sets_borrow_to_0_if_underflow);
-    RUN_TEST(sub_vy_from_vx_sets_borrow_to_1_if_no_underflow);
+    RUN_TEST(test_8XY0_Assign_SetsVXToVY);
 
-    // 0xA000
-    RUN_TEST(set_i_to_address);
+    RUN_TEST(test_8XY1_LogicalOr_SetsVXToVXOrVY);
+    RUN_TEST(test_8XY2_LogicalAnd_SetsVXToVXAndVY);
+    RUN_TEST(test_8XY3_LogicalXor_SetsVXToVXXorVY);
 
-    // 0xB000
-    RUN_TEST(jump_to_addr_plus_v0);
+    RUN_TEST(test_8XY4_Add_SetsCarryTo1IfOverflow);
+    RUN_TEST(test_8XY4_Add_SetsCarryTo0IfNoOverflow);
 
-    // 0xC000
+    RUN_TEST(test_8XY5_SubtractAssign_SetsBorrowTo0IfUnderflow);
+    RUN_TEST(test_8XY5_SubtractAssign_SetsBorrowTo1IfNoUnderflow);
 
-    // 0xD000
+    // 8XY6
 
-    // 0xE000
-    //RUN_TEST(key_down_skip_next_instruction);
-    //RUN_TEST(key_down_does_not_skip_next_instruction);
-    //RUN_TEST(key_up_skip_next_instruction);
-    //RUN_TEST(key_up_does_not_skip_next_instruction);
+    RUN_TEST(test_8XY7_SubtractAssignReverse_SetsBorrowTo0IfUnderflow);
+    RUN_TEST(test_8XY7_SubtractAssignReverse_SetsBorrowTo1IfNoUnderflow);
 
-    // 0xF000
-    RUN_TEST(test_awaitKeypressSetsWaitFlagAndRegister);
-    RUN_TEST(test_store_bcd_of_vx_at_i);
-    RUN_TEST(test_store_V0_to_Vx);
-    RUN_TEST(test_fill_V0_to_Vx);
+    // 8XYE
+
+    // 9XY0
+    RUN_TEST(test_9XYN_SkipVXNotEqualsVY_SkipsNextInstructionIfVXNotEqualsVY);
+    RUN_TEST(test_9XYN_SkipVXNotEqualsVY_DoesNotSkipNextInstructionIfVXEqualsVY);
+
+    // ANNN
+    RUN_TEST(test_ANNN_SetIndex_SetsTheIndexRegisterToNNN);
+
+    // BXNN
+    RUN_TEST(test_BXNN_JumpOffset_SetsPCToNNPlusVX);
+
+    // CXNN
+    RUN_TEST(test_CXNN_BitwiseRandom_AdvancesProgramCounter);
+
+    // DXYN
+    RUN_TEST(test_DXYN_DrawSprite_SetsTheDrawFlag);
+
+    // E000
+    RUN_TEST(test_EX9E_KeyDown_SkipsNextInstructionIfKeyIsDown);
+    RUN_TEST(test_EX9E_KeyDown_DoesNotSkipNextInstructionIfKeyUp);
+    RUN_TEST(test_EXA1_KeyUp_SkipsNextInstructionIfKeyUp);
+    RUN_TEST(test_EXA1_KeyUp_DoesNotSkipNextInstructionIfKeyDown);
+
+    // F000
+    RUN_TEST(test_FX07_ReadDelayTimer_StoresValueOfDelayTimerInVX);
+    RUN_TEST(test_FX0A_KeyAwait_SetsWaitFlagAndRegister);
+    RUN_TEST(test_FX15_SetDelayTimer_SetsDelayTimerToValueInVX);
+    RUN_TEST(test_FX18_SetSoundTimer_SetsSoundTimerToValueInVX);
+    RUN_TEST(test_FX1E_AddToIndex_AddsVXToTheIndex);
+    RUN_TEST(test_FX33_StoreBinaryCodedDecimal_StoresTheCorrectBCDRepresentation);
+    RUN_TEST(test_FX55_Store_StoresV0ToVXInMemory);
+    RUN_TEST(test_FX65_Load_LoadsV0ToVXFromMemory);
 
     return UnityEnd();
 }

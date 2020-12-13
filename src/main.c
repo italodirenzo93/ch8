@@ -17,12 +17,18 @@ static void initialize(int argc, char* argv[])
 {
     // Initialize VM
     ch8_reset(&cpu);
-    srand((unsigned int)time(NULL));
+    srand((u32)time(NULL));
+
+    // Initialize sub-systems
+    if (ch8_logInit() != 0) {
+        fprintf(stderr, "Could not initialize the logger\n");
+        exit(EXIT_FAILURE);
+    }
 
     // Load test ROM
     //ch8_load_rom(cpu, program, SDL_arraysize(program));
     // TODO: Get ROM filename from argv
-    if (!ch8_loadRomFile(&cpu, "assets/PONG")) {
+    if (!ch8_loadRomFile(&cpu, "assets/test_opcode.ch8")) {
         ch8_logCritical("Could not load ROM");
         exit(EXIT_FAILURE);
     }
@@ -36,12 +42,6 @@ static void initialize(int argc, char* argv[])
     window = SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 320, 0);
     if (window == NULL) {
         fprintf(stderr, "Could not create SDL window: %s\n", SDL_GetError());
-        exit(EXIT_FAILURE);
-    }
-
-    // Initialize sub-systems
-    if (ch8_logInit() != 0) {
-        fprintf(stderr, "Could not initialize the logger\n");
         exit(EXIT_FAILURE);
     }
 
@@ -107,11 +107,11 @@ int main(int argc, char *argv[])
     atexit(cleanup);
     initialize(argc, argv);
 
-    float elapsedMs = 0.0f;
+    f32 elapsedMs = 0.0f;
     while (1) {
         windowMessageLoop();
 
-        uint64_t start, end;
+        u64 start, end;
 
         start = SDL_GetPerformanceCounter();
 
@@ -124,15 +124,14 @@ int main(int argc, char *argv[])
 
         end = SDL_GetPerformanceCounter();
 
-        float elapsed = (float)((end - start) * 1000) / SDL_GetPerformanceFrequency();
+        f32 elapsed = (f32)((end - start) * 1000) / SDL_GetPerformanceFrequency();
 
         // Cap the framerate to 60hz
-        SDL_Delay((Uint32)SDL_floorf(16.666f - elapsed));
+        SDL_Delay((u32)SDL_floorf(16.666f - elapsed));
 
         // Update timers
         cpu.delayTimer = ch8_max(cpu.delayTimer - 1, 0);
         cpu.soundTimer = ch8_max(cpu.soundTimer - 1, 0);
-
 
         elapsedMs = elapsed;
     }

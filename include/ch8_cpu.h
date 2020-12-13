@@ -2,8 +2,9 @@
 #define __CPU_H__
 
 #include <stdlib.h>
-#include <stdint.h>
 #include <stdbool.h>
+
+#include "ch8_def.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -28,30 +29,29 @@ extern "C"
 
 typedef struct ch8_cpu
 {
-    uint8_t memory[CH8_MEM_SIZE];
-    uint16_t *stack;
-    uint8_t *framebuffer;
+    u8 memory[CH8_MEM_SIZE];
+    u16 *stack;
+    u8 *framebuffer;
 
-    uint8_t V[CH8_NUM_REGISTERS]; /* data registers */
+    u8 V[CH8_NUM_REGISTERS]; /* data registers */
 
-    uint16_t index;
-    uint16_t programCounter;
-    uint8_t stackPointer;
+    u16 index;
+    u16 programCounter;
+    u8 stackPointer;
 
-    uint8_t delayTimer;
-    uint8_t soundTimer;
+    u8 delayTimer;
+    u8 soundTimer;
 
     bool keypad[CH8_NUM_KEYS];
 
     bool drawFlag;
     bool waitFlag;
-    uint8_t waitReg;
+    u8 waitReg;
 } ch8_cpu;
 
 void ch8_reset(ch8_cpu *cpu);
-void ch8_loadRomData(ch8_cpu *cpu, const uint8_t *program, size_t size);
 bool ch8_loadRomFile(ch8_cpu *cpu, const char *file);
-uint16_t ch8_nextOpcode(ch8_cpu *cpu);
+u16 ch8_nextOpcode(ch8_cpu *cpu);
 bool ch8_clockCycle(ch8_cpu *cpu, float elapsed_ms);
 
 bool ch8_getPixel(const ch8_cpu *cpu, int x, int y);
