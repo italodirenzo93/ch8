@@ -54,6 +54,8 @@ void ch8_reset(ch8_cpu *cpu)
     cpu->soundTimer = 0;
 
     cpu->drawFlag = false;
+    cpu->waitFlag = false;
+    cpu->waitReg = 0;
 
     ch8_logDebug("CHIP-VM (re)-initialized");
 }
@@ -122,8 +124,10 @@ bool ch8_clockCycle(ch8_cpu *cpu, float elapsed_ms)
         return false;
     }
 
-    // Set the draw flag to false before each instruction
+    // Set flags to false before each instruction
     cpu->drawFlag = false;
+    cpu->waitFlag = false;
+    cpu->waitReg = 0;
 
     switch (opcode & 0xF000)
     {
