@@ -258,6 +258,14 @@ static void key_up_does_not_skip_next_instruction(void)
     TEST_ASSERT_EQUAL(7, chip8.programCounter);
 }
 
+// 0xFX0A
+static void test_awaitKeypressSetsWaitFlagAndRegister(void)
+{
+    ch8_op_await_keypress(&chip8, 0xFE0A);
+    TEST_ASSERT_TRUE(chip8.waitFlag);
+    TEST_ASSERT_EQUAL(0xE, chip8.waitReg);
+}
+
 // 0xFX33
 static void test_store_bcd_of_vx_at_i(void)
 {
@@ -366,6 +374,7 @@ int main()
     //RUN_TEST(key_up_does_not_skip_next_instruction);
 
     // 0xF000
+    RUN_TEST(test_awaitKeypressSetsWaitFlagAndRegister);
     RUN_TEST(test_store_bcd_of_vx_at_i);
     RUN_TEST(test_store_V0_to_Vx);
     RUN_TEST(test_fill_V0_to_Vx);

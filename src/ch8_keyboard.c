@@ -11,37 +11,37 @@ ch8_key __SDLKeycodeToKeyRegister(SDL_Keycode keycode)
 {
     switch (keycode)
     {
-    case SDLK_KP_0:
+    case SDLK_x:
         return KEY_0;
-    case SDLK_KP_1:
+    case SDLK_1:
         return KEY_1;
-    case SDLK_KP_2:
+    case SDLK_2:
         return KEY_2;
-    case SDLK_KP_3:
+    case SDLK_3:
         return KEY_3;
-    case SDLK_KP_4:
+    case SDLK_q:
         return KEY_4;
-    case SDLK_KP_5:
+    case SDLK_w:
         return KEY_5;
-    case SDLK_KP_6:
+    case SDLK_e:
         return KEY_6;
-    case SDLK_KP_7:
+    case SDLK_a:
         return KEY_7;
-    case SDLK_KP_8:
+    case SDLK_s:
         return KEY_8;
-    case SDLK_KP_9:
+    case SDLK_d:
         return KEY_9;
-    case SDLK_KP_A:
+    case SDLK_z:
         return KEY_A;
-    case SDLK_KP_B:
+    case SDLK_c:
         return KEY_B;
-    case SDLK_KP_C:
+    case SDLK_4:
         return KEY_C;
-    case SDLK_KP_D:
+    case SDLK_r:
         return KEY_D;
-    case SDLK_KP_E:
+    case SDLK_f:
         return KEY_E;
-    case SDLK_KP_F:
+    case SDLK_v:
         return KEY_F;
     default:
         return KEY_UNKNOWN;
@@ -80,45 +80,4 @@ void ch8_setKeyUp(ch8_cpu *cpu, ch8_key key)
     if (key != KEY_UNKNOWN) {
         cpu->keypad[key] = false;
     }
-}
-
-int ch8_awaitKeyPress(ch8_cpu *cpu, ch8_key *key)
-{
-    assert(cpu != NULL);
-    
-    SDL_Event event = { 0 };
-    while (event.type != SDL_KEYDOWN) {
-        if (SDL_WaitEvent(&event) != 1) {
-            ch8_logDebug("Error awaiting keypress: %s", SDL_GetError());
-            return 1;
-        }
-    }
-    
-    (*key) = __SDLKeycodeToKeyRegister(event.key.keysym.sym);
-    if ((*key) != KEY_UNKNOWN) {
-        ch8_setKeyDown(cpu, (*key));
-    }
-    
-    return 0;
-}
-
-void ch8_pollKeyboardInput(ch8_cpu* cpu)
-{
-    const Uint8* keys = SDL_GetKeyboardState(NULL);
-    cpu->keypad[KEY_0] = keys[SDL_SCANCODE_X];
-    cpu->keypad[KEY_1] = keys[SDL_SCANCODE_1];
-    cpu->keypad[KEY_2] = keys[SDL_SCANCODE_2];
-    cpu->keypad[KEY_3] = keys[SDL_SCANCODE_3];
-    cpu->keypad[KEY_4] = keys[SDL_SCANCODE_Q];
-    cpu->keypad[KEY_5] = keys[SDL_SCANCODE_W];
-    cpu->keypad[KEY_6] = keys[SDL_SCANCODE_E];
-    cpu->keypad[KEY_7] = keys[SDL_SCANCODE_A];
-    cpu->keypad[KEY_8] = keys[SDL_SCANCODE_S];
-    cpu->keypad[KEY_9] = keys[SDL_SCANCODE_D];
-    cpu->keypad[KEY_A] = keys[SDL_SCANCODE_Z];
-    cpu->keypad[KEY_B] = keys[SDL_SCANCODE_C];
-    cpu->keypad[KEY_C] = keys[SDL_SCANCODE_4];
-    cpu->keypad[KEY_D] = keys[SDL_SCANCODE_R];
-    cpu->keypad[KEY_E] = keys[SDL_SCANCODE_F];
-    cpu->keypad[KEY_F] = keys[SDL_SCANCODE_V];
 }

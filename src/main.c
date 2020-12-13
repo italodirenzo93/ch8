@@ -15,6 +15,18 @@ SDL_Window* window = NULL;
 
 static void initialize(int argc, char* argv[])
 {
+    // Initialize VM
+    ch8_reset(&cpu);
+    srand((unsigned int)time(NULL));
+
+    // Load test ROM
+    //ch8_load_rom(cpu, program, SDL_arraysize(program));
+    // TODO: Get ROM filename from argv
+    if (!ch8_loadRomFile(&cpu, "assets/PONG")) {
+        ch8_logCritical("Could not load ROM");
+        exit(EXIT_FAILURE);
+    }
+
     // Initialize SDL and create window
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
         fprintf(stderr, "Could not initialize SDL: %s\n", SDL_GetError());
@@ -27,13 +39,9 @@ static void initialize(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    // Initialize VM
-    ch8_reset(&cpu);
-    srand((unsigned int)time(NULL));
-
     // Initialize sub-systems
     if (ch8_logInit() != 0) {
-        printf("Could not initialize the logger\n");
+        fprintf(stderr, "Could not initialize the logger\n");
         exit(EXIT_FAILURE);
     }
 
@@ -44,14 +52,6 @@ static void initialize(int argc, char* argv[])
 
     if (ch8_audioInit() != 0) {
         ch8_logCritical("Failed to initialize audio");
-    }
-
-    // Load test ROM
-    //ch8_load_rom(cpu, program, SDL_arraysize(program));
-    // TODO: Get ROM filename from argv
-    if (!ch8_loadRomFile(&cpu, "assets/BC_test.ch8")) {
-        ch8_logCritical("Could not load ROM");
-        exit(EXIT_FAILURE);
     }
 }
 
@@ -80,6 +80,24 @@ static void windowMessageLoop(void)
         case SDL_QUIT:
             exit(EXIT_SUCCESS);
             break;
+        case SDL_KEYDOWN: {
+            ch8_key key = __SDLKeycodeToKeyRegister(event.key.keysym.sym);
+            if (key != KEY_UNKNOWN) {
+                ch8_setKeyDown(&cpu, key);
+                if (cpu.waitFlag) {
+                    cpu.V[cpu.waitReg] = key;
+                    cpu.waitFlag = false;
+                }
+            }
+            break;
+        }
+        case SDL_KEYUP: {
+            ch8_key key = __SDLKeycodeToKeyRegister(event.key.keysym.sym);
+            if (key != KEY_UNKNOWN) {
+                ch8_setKeyUp(&cpu, key);
+            }
+            break;
+        }
         }
     }
 }
@@ -97,8 +115,7 @@ int main(int argc, char *argv[])
 
         start = SDL_GetPerformanceCounter();
 
-        if (ch8_clockCycle(&cpu, elapsedMs)) {
-            ch8_pollKeyboardInput(&cpu);
+        if (!cpu.waitFlag && ch8_clockCycle(&cpu, elapsedMs)) {
             if (cpu.drawFlag) {
                 ch8_displayWriteFb(&cpu);
             }
@@ -110,7 +127,7 @@ int main(int argc, char *argv[])
         float elapsed = (float)((end - start) * 1000) / SDL_GetPerformanceFrequency();
 
         // Cap the framerate to 60hz
-        //SDL_Delay((Uint32)SDL_floorf(16.666f - elapsed));
+        SDL_Delay((Uint32)SDL_floorf(16.666f - elapsed));
 
         // Update timers
         cpu.delayTimer = ch8_max(cpu.delayTimer - 1, 0);

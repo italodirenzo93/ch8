@@ -204,9 +204,11 @@ void ch8_op_bitshift_right_vx_to_vf(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
 
-    const uint8_t x = (opcode & 0x0F00) >> 8;
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    uint8_t y = (opcode & 0x00F0) >> 4;
+
     cpu->V[0xF] = cpu->V[x] & 0x1;
-    cpu->V[x] >>= 1;
+    cpu->V[x] = cpu->V[y] >> 1;
 
     ch8_logDebug("[8XY6] - SHIFTR V[%d] >>= 1", x);
 }
@@ -216,10 +218,14 @@ void ch8_op_set_vx_to_vx_sub_vy(ch8_cpu *cpu, uint16_t opcode)
 {
     assert(cpu != NULL);
 
-    const uint16_t x = (opcode & 0x0F00) >> 8;
-    const uint16_t y = (opcode & 0x00F0) >> 4;
-    cpu->V[0xF] = cpu->V[y] > cpu->V[x] ? 1 : 0;
-    cpu->V[x] = cpu->V[y] - cpu->V[x];
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    uint8_t y = (opcode & 0x00F0) >> 4;
+
+    uint8_t vx = cpu->V[x];
+    uint8_t vy = cpu->V[y];
+
+    cpu->V[x] = vy - vx;
+    cpu->V[0xF] = vy < vx ? 0x0 : 0x1;
 
     ch8_logDebug("[8XY7] - SUB V[%d] = V[%d] - V[%d]", x, y, x);
 }
@@ -365,17 +371,8 @@ void ch8_op_await_keypress(ch8_cpu *cpu, uint16_t opcode)
     assert(cpu != NULL);
     ch8_logDebug("[FX0A] - Await keypress...");
 
-    const uint16_t x = (opcode & 0x0F00) >> 8;
-
-    ch8_key key;
-    if (ch8_awaitKeyPress(cpu, &key) != 0) {
-        ch8_logError("Error awaiting keypress");
-        return;
-    }
-
-    if (key != KEY_UNKNOWN) {
-        cpu->V[x] = (uint8_t) key;
-    }
+    cpu->waitFlag = true;
+    cpu->waitReg = (opcode & 0x0F00) >> 8;
 }
 
 // 0xFX15
@@ -442,7 +439,7 @@ void ch8_op_store_v0_to_vx(ch8_cpu *cpu, uint16_t opcode)
         cpu->memory[cpu->index + i] = cpu->V[i];
     }
 
-    //cpu->index_register += x + 1;
+    //cpu->index += x + 1;
 
     ch8_logDebug("[FX55] - STORE V[0]..V[%d] in memory", x);
 }
@@ -457,7 +454,7 @@ void ch8_op_fill_v0_to_vx(ch8_cpu *cpu, uint16_t opcode)
         cpu->V[i] = cpu->memory[cpu->index + i];
     }
 
-    //cpu->index_register += x + 1;
+    //cpu->index += x + 1;
 
     ch8_logDebug("[FX55] - FILL memory bytes into V[0]..V[%d]", x);
 }
