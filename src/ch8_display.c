@@ -79,16 +79,16 @@ void ch8_displayWriteFb(const ch8_cpu* cpu)
     INIT_CHECK();
     assert(cpu != NULL);
 
-    uint8_t* pixels = NULL;
+    u8* pixels = NULL;
     int x, y, pitch;
 
     SDL_LockTexture(display, NULL, (void**)&pixels, &pitch);
 
     for (y = 0; y < CH8_DISPLAY_HEIGHT; y++) {
-        uint32_t* p = (uint32_t*)(pixels + pitch * y);
+        u32* p = (u32*)(pixels + pitch * y);
         for (x = 0; x < CH8_DISPLAY_WIDTH; x++) {
-            const uint16_t i = y * CH8_DISPLAY_WIDTH + x;
-            const uint8_t color = ch8_getPixel(cpu, x, y) > 0 ? 255 : 0;
+            u16 i = y * CH8_DISPLAY_WIDTH + x;
+            u8 color = ch8_getPixel(cpu, x, y) > 0 ? 255 : 0;
             *p = SDL_MapRGB(pixelFormat, color, color, color);
             p++;
         }

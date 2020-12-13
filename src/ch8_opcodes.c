@@ -5,11 +5,15 @@
 #include <string.h>
 
 #include "ch8_log.h"
-#include "ch8_keyboard.h"
 #include "ch8_util.h"
 
+static inline void next(ch8_cpu* cpu)
+{
+    cpu->programCounter += CH8_PC_STEP_SIZE;
+}
+
 // 0x00E0
-void ch8_op_display_clear(ch8_cpu *cpu)
+void ch8_op_ClearDisplay(ch8_cpu *cpu)
 {
     assert(cpu != NULL);
     ch8_logDebug("[00E0] - Clear Display");
@@ -17,157 +21,198 @@ void ch8_op_display_clear(ch8_cpu *cpu)
     for (int i = 0; i < CH8_DISPLAY_SIZE; i++) {
         cpu->framebuffer[i] = 0;
     }
+
+    next(cpu);
 }
 
 // 0x00EE
-void ch8_op_return(ch8_cpu* cpu)
+void ch8_op_ReturnFromSub(ch8_cpu* cpu)
 {
     assert(cpu != NULL);
     ch8_logDebug("[00EE] - Return from sub-routine");
 
-    cpu->programCounter = cpu->stack[--cpu->stackPointer];
+    // Set program counter to address at top of stack
+    cpu->programCounter = cpu->stack[cpu->stackPointer];
+
+    // "Pop" the value from the top of the stack
+    cpu->stack[cpu->stackPointer] = 0;
+    cpu->stackPointer--;
 }
 
 // 0x1NNN
-void ch8_op_jumpto(ch8_cpu* cpu, uint16_t opcode)
+void ch8_op_JumpTo(ch8_cpu* cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const uint16_t addr = opcode & 0x0FFF;
+    u16 addr = opcode & 0x0FFF;
+
     ch8_logDebug("[1NNN] - Jump to address %X", addr);
+
     cpu->programCounter = addr;
 }
 
 // 0x2NNN
-void ch8_op_callsub(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_CallSub(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
 
-    const uint16_t addr = opcode & 0x0FFF;
+    u16 addr = opcode & 0x0FFF;
     ch8_logDebug("[2NNN] - Call subroutine at address %X", addr);
 
-    cpu->stack[cpu->stackPointer++] = cpu->programCounter;
+    // TODO: check for stack overflow
+
+    cpu->stack[++cpu->stackPointer] = cpu->programCounter;
     cpu->programCounter = addr;
 }
 
 // 0x3XKK
-void ch8_op_cond_eq(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_SkipEquals(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const uint8_t x = (opcode & 0x0F00) >> 8;
-    const uint8_t operand = opcode & 0x00FF;
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 operand = opcode & 0x00FF;
+
     ch8_logDebug("[3XKK] - IF conditional (V[%d] == %d)", x, operand);
-    if (cpu->V[x] == operand)
-    {
+
+    if (cpu->V[x] == operand) {
         // Skip the next instruction
-        cpu->programCounter += CH8_PC_STEP_SIZE;
+        next(cpu);
     }
+
+    next(cpu);
 }
 
 // 0x4XKK
-void ch8_op_cond_neq(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_SkipNotEquals(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const uint8_t x = (opcode & 0x0F00) >> 8;
-    const uint8_t operand = opcode & 0x00FF;
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 operand = opcode & 0x00FF;
+
     ch8_logDebug("[4XKK] - IF conditional (V[%d] != %d)", x, operand);
-    if (cpu->V[x] != operand)
-    {
-        // Skip the next instruction
-        cpu->programCounter += CH8_PC_STEP_SIZE;
+
+    if (cpu->V[x] != operand) {
+        next(cpu);
     }
+
+    next(cpu);
 }
 
 // 0x5XY0
-void ch8_op_cond_vx_eq_vy(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_SkipVXEqualsVY(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const uint8_t x = (opcode & 0x0F00) >> 8;
-    const uint8_t y = (opcode & 0x00F0) >> 4;
+
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 y = (opcode & 0x00F0) >> 4;
+
     ch8_logDebug("[5XY0] - IF conditional (V[%d] == V[%d])\n", x, y);
-    if (cpu->V[x] == cpu->V[y])
-    {
-        // Skip the next instruction
-        cpu->programCounter += CH8_PC_STEP_SIZE;
+
+    if (cpu->V[x] == cpu->V[y]) {
+        next(cpu);
     }
+
+    next(cpu);
 }
 
 // 0x6XKK
-void ch8_op_const_set(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_Set(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const uint8_t x = (opcode & 0x0F00) >> 8;
-    const uint8_t value = opcode & 0x00FF;
+
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 value = opcode & 0x00FF;
+
     ch8_logDebug("[6XKK] - SET register V[%d] = %d\n", x, value);
+
     cpu->V[x] = value;
+
+    next(cpu);
 }
 
 // 0x7XKK
-void ch8_op_const_add(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_Add(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const uint8_t x = (opcode & 0x0F00) >> 8;
-    const uint8_t operand = opcode & 0x00FF;
+
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 operand = opcode & 0x00FF;
+
     ch8_logDebug("[7XKK] - ADD %d to register V[%d]\n", operand, x);
+
     cpu->V[x] += operand;
+
+    next(cpu);
 }
 
 // 0x8XY0
-void ch8_op_assign(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_Assign(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
 
-    const uint8_t x = (opcode & 0x0F00) >> 8;
-    const uint8_t y = (opcode & 0x00F0) >> 4;
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 y = (opcode & 0x00F0) >> 4;
 
     ch8_logDebug("[8XY0] - SET V[%d] = V[%d]\n", x, y);
+
     cpu->V[x] = cpu->V[y];
+
+    next(cpu);
 }
 
 // 0x8XY1
-void ch8_op_or(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_LogicalOr(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
 
-    const uint8_t x = (opcode & 0x0F00) >> 8;
-    const uint8_t y = (opcode & 0x00F0) >> 4;
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 y = (opcode & 0x00F0) >> 4;
 
     ch8_logDebug("[8XY1] - OR V[%d] = (V[%d] | V[%d])\n", x, x, y);
+
     cpu->V[x] |= cpu->V[y];
+
+    next(cpu);
 }
 
 // 0x8XY2
-void ch8_op_and(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_LogicalAnd(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
 
-    const uint8_t x = (opcode & 0x0F00) >> 8;
-    const uint8_t y = (opcode & 0x00F0) >> 4;
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 y = (opcode & 0x00F0) >> 4;
 
     ch8_logDebug("[8XY2] - AND V[%d] = (V[%d] & V[%d])\n", x, x, y);
+
     cpu->V[x] &= cpu->V[y];
+
+    next(cpu);
 }
 
 // 0x8XY3
-void ch8_op_xor(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_LogicalXor(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
 
-    const uint8_t x = (opcode & 0x0F00) >> 8;
-    const uint8_t y = (opcode & 0x00F0) >> 4;
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 y = (opcode & 0x00F0) >> 4;
 
     ch8_logDebug("[8XY3] - XOR V[%d] = (V[%d] ^ V[%d])\n", x, x, y);
+
     cpu->V[x] ^= cpu->V[y];
+
+    next(cpu);
 }
 
 // 0x8XY4
-void ch8_op_add_vx_to_vy(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_AddAssign(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
 
-    const uint8_t x = (opcode & 0x0F00) >> 8;
-    const uint8_t y = (opcode & 0x00F0) >> 4;
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 y = (opcode & 0x00F0) >> 4;
 
-    const uint16_t sum = cpu->V[x] + cpu->V[y];
+    u16 sum = cpu->V[x] + cpu->V[y];
 
     //set carry flag
     cpu->V[0xF] = 0;
@@ -175,18 +220,20 @@ void ch8_op_add_vx_to_vy(ch8_cpu *cpu, uint16_t opcode)
         cpu->V[0xF] = 1;
     }
 
-    cpu->V[x] = (uint8_t)sum;
+    cpu->V[x] = (u8)sum;
 
     ch8_logDebug("[8XY4] - ADD V[%d] += V[%d] : V[0xF] = %d", x, y, cpu->V[0xF]);
+
+    next(cpu);
 }
 
 // 0x8XY5
-void ch8_op_sub_vy_from_vx(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_SubtractAssign(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
 
-    const uint8_t x = (opcode & 0x0F00) >> 8;
-    const uint8_t y = (opcode & 0x00F0) >> 4;
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 y = (opcode & 0x00F0) >> 4;
 
     cpu->V[0xF] = 0;
 
@@ -194,106 +241,130 @@ void ch8_op_sub_vy_from_vx(ch8_cpu *cpu, uint16_t opcode)
         cpu->V[0xF] = 1;
     }
 
-    cpu->V[x] -= cpu->V[y];
+    cpu->V[x] = cpu->V[x] - cpu->V[y];
 
     ch8_logDebug("[8XY5] - SUB V[%d] -= V[%d] : V[0xF] = %d", x, y, cpu->V[0xF]);
+
+    next(cpu);
 }
 
 // 0x8XY6
-void ch8_op_bitshift_right_vx_to_vf(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_BitshiftRight(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
 
-    uint8_t x = (opcode & 0x0F00) >> 8;
-    uint8_t y = (opcode & 0x00F0) >> 4;
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 y = (opcode & 0x00F0) >> 4;
 
     cpu->V[0xF] = cpu->V[x] & 0x1;
     cpu->V[x] = cpu->V[y] >> 1;
 
     ch8_logDebug("[8XY6] - SHIFTR V[%d] >>= 1", x);
+
+    next(cpu);
 }
 
 // 0x8XY7
-void ch8_op_set_vx_to_vx_sub_vy(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_SubtractAssignReverse(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
 
-    uint8_t x = (opcode & 0x0F00) >> 8;
-    uint8_t y = (opcode & 0x00F0) >> 4;
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 y = (opcode & 0x00F0) >> 4;
 
-    uint8_t vx = cpu->V[x];
-    uint8_t vy = cpu->V[y];
+    u8 vx = cpu->V[x];
+    u8 vy = cpu->V[y];
 
     cpu->V[x] = vy - vx;
     cpu->V[0xF] = vy < vx ? 0x0 : 0x1;
 
     ch8_logDebug("[8XY7] - SUB V[%d] = V[%d] - V[%d]", x, y, x);
+
+    next(cpu);
 }
 
 // 0x8XYE
-void ch8_op_bitshift_left_vx_to_vf(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_BitshiftLeft(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
 
-    uint8_t x = (opcode & 0x0F00) >> 8;
-    uint8_t y = (opcode & 0x00F0) >> 4;
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 y = (opcode & 0x00F0) >> 4;
 
     cpu->V[0xF] = (cpu->V[x] >> 7) & 0x1;
     cpu->V[x] = cpu->V[y] << 1;
 
     ch8_logDebug("[8XYE] - SHIFTL V[%d] <<= 1", x);
+
+    next(cpu);
 }
 
 // 0x9XY0
-void ch8_op_cond_vx_neq_vy(ch8_cpu* cpu, uint16_t opcode)
+void ch8_op_SkipVXNotEqualsVY(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const uint8_t x = (opcode & 0x0F00) >> 8;
-    const uint8_t y = (opcode & 0x00F0) >> 4;
+
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 y = (opcode & 0x00F0) >> 4;
+
     ch8_logDebug("[9XY0] - IF conditional (V[%d] != V[%d])\n", x, y);
-    if (cpu->V[x] != cpu->V[y])
-    {
-        // Skip the next instruction
-        cpu->programCounter += CH8_PC_STEP_SIZE;
+
+    if (cpu->V[x] != cpu->V[y]) {
+        next(cpu);
     }
+
+    next(cpu);
 }
 
 // 0xANNN
-void ch8_op_set_addr(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_SetIndex(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const uint16_t addr = opcode & 0x0FFF;
+
+    u16 addr = opcode & 0x0FFF;
+
     ch8_logDebug("[ANNN] - SET I = %d\n", addr);
+
     cpu->index = addr;
+
+    next(cpu);
 }
 
 // 0xBNNN
-void ch8_jump_to_addr_plus_v0(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_JumpOffset(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const uint16_t addr = opcode & 0x0FFF;
-    ch8_logDebug("JUMP to %d + V[0]\n", addr);
-    cpu->programCounter = addr + cpu->V[0];
+
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 addr = opcode & 0x00FF;
+
+    ch8_logDebug("JUMP to %d + V[%d]\n", x, addr);
+
+    cpu->programCounter = addr + cpu->V[x];
 }
 
 // 0xCNNN
-void ch8_op_bitwise_rand(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_BitwiseRandom(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const uint8_t x = (opcode & 0x0F00) >> 8;
-    const uint8_t nn = (opcode & 0x00FF);
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 nn = (opcode & 0x00FF);
+
     ch8_logDebug("RAND V[%d] = rand() & %d\n", x, nn);
-    cpu->V[x] = (rand() % 256) & nn;
+
+    cpu->V[x] = ch8_randU8() & nn;
+
+    next(cpu);
 }
 
 // 0xDXYN
-void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_DrawSprite(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
 
-    const uint8_t x = (opcode & 0x0F00) >> 8;
-    const uint8_t y = (opcode & 0x00F0) >> 4;
-    const uint8_t n = opcode & 0x000F;
+    u8 x = (opcode & 0x0F00) >> 8;
+    u8 y = (opcode & 0x00F0) >> 4;
+    u8 n = opcode & 0x000F;
 
     int startX = cpu->V[x];
     int startY = cpu->V[y];
@@ -311,7 +382,7 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
     cpu->V[0xF] = 0;
 
     for (int y = startY; y < endY; y++) {
-        uint8_t spriteByte = cpu->memory[cpu->index + (y - startY)];
+        u8 spriteByte = cpu->memory[cpu->index + (y - startY)];
         for (int x = startX; x < endX; x++) {
             // NOTE: spritePixel and screenPixel are 0 or non-zero
             // not 0 or 1 !!!
@@ -332,108 +403,147 @@ void ch8_op_draw_sprite(ch8_cpu *cpu, uint16_t opcode)
     cpu->drawFlag = true;
 
     ch8_logDebug("[DXYN] - Draw X: %d, Y: %d, N: %d", cpu->V[x], cpu->V[y], n);
+
+    next(cpu);
 }
 
 // 0xEX9E
-void ch8_op_keyop_eq(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_KeyEquals(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const ch8_key key = (ch8_key) ((opcode & 0x0F00) >> 8);
+
+    u8 key = (opcode & 0x0F00) >> 8;
+
     ch8_logDebug("KEY check if keypad[%d] is down\n", key);
-    if (ch8_isKeyDown(cpu, key)) {
-        cpu->programCounter += CH8_PC_STEP_SIZE;
+
+    if (cpu->keypad[key] == true) {
+        next(cpu);
     }
+
+    next(cpu);
 }
 
 // 0xEXA1
-void ch8_op_keyop_neq(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_KeyNotEquals(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const ch8_key key = (ch8_key) ((opcode & 0x0F00) >> 8);
+
+    u8 key = (opcode & 0x0F00) >> 8;
+
     ch8_logDebug("KEY check if keypad[%d] is up\n", key);
-    if (ch8_isKeyUp(cpu, key)) {
-        cpu->programCounter += CH8_PC_STEP_SIZE;
+
+    if (cpu->keypad[key] == false) {
+        next(cpu);
     }
+
+    next(cpu);
 }
 
 // 0xFX07
-void ch8_op_set_vx_to_delay_timer(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_ReadDelayTimer(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const uint16_t x = (opcode & 0x0F00) >> 8;
+
+    u16 x = (opcode & 0x0F00) >> 8;
+
     cpu->V[x] = cpu->delayTimer;
+
     ch8_logDebug("TIMER set V[%d] = delay timer val %d", x, cpu->delayTimer);
+
+    next(cpu);
 }
 
 // 0xFX0A
-void ch8_op_await_keypress(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_KeyWait(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
+
     ch8_logDebug("[FX0A] - Await keypress...");
 
     cpu->waitFlag = true;
     cpu->waitReg = (opcode & 0x0F00) >> 8;
+
+    next(cpu);
 }
 
 // 0xFX15
-void ch8_op_set_delay_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_SetDelayTimer(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
 
-    const uint16_t x = (opcode & 0x0F00) >> 8;
+    u16 x = (opcode & 0x0F00) >> 8;
+
     cpu->delayTimer = cpu->V[x];
 
     ch8_logDebug("TIMER set delay timer to V[%d] (%d)", x, cpu->delayTimer);
+
+    next(cpu);
 }
 
 // 0xFX18
-void ch8_op_set_sound_timer_to_vx(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_SetSoundTimer(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
 
-    const uint16_t x = (opcode & 0x0F00) >> 8;
+    u16 x = (opcode & 0x0F00) >> 8;
+
     cpu->soundTimer = cpu->V[x];
 
     ch8_logDebug("SOUND set sound timer to V[%d] (%d)", x, cpu->soundTimer);
+
+    next(cpu);
 }
 
 // 0xFX1E
-void ch8_op_add_vx_to_I(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_AddToIndex(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const uint16_t x = (opcode & 0x0F00) >> 8;
+
+    u16 x = (opcode & 0x0F00) >> 8;
+
     cpu->index += cpu->V[x];
+
     ch8_logDebug("[FX1E] - ADD I += V[%d]", x);
+
+    next(cpu);
 }
 
 // 0xFX29
-void ch8_op_set_I_to_sprite_addr(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_SetFontChar(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const uint8_t x = (opcode & 0x0F00) >> 8;
+
+    u8 x = (opcode & 0x0F00) >> 8;
+
     cpu->index = cpu->V[x] * 5;
+
     ch8_logDebug("[FX29] - SET I = V[%d] * 5 (sprite_addr)", x);
+
+    next(cpu);
 }
 
 // 0xFX33
-void ch8_op_store_bcd_of_vx(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_StoreBinaryCodedDecimal(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
 
-    const uint8_t x = (opcode & 0x0F00) >> 8;
+    u8 x = (opcode & 0x0F00) >> 8;
 
-    cpu->memory[cpu->index] = (uint8_t)cpu->V[x] / 100;
-    cpu->memory[cpu->index + 1] = (uint8_t)(cpu->V[x] % 100) / 10;
-    cpu->memory[cpu->index + 2] = (uint8_t)cpu->V[x] % 10;
+    cpu->memory[cpu->index] = (u8)cpu->V[x] / 100;
+    cpu->memory[cpu->index + 1] = (u8)(cpu->V[x] % 100) / 10;
+    cpu->memory[cpu->index + 2] = (u8)cpu->V[x] % 10;
 
     ch8_logDebug("[FX33] - BCD store V[%d] (%d)", x, cpu->V[x]);
+
+    next(cpu);
 }
 
 // 0xFX55
-void ch8_op_store_v0_to_vx(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_Store(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const uint8_t x = (opcode & 0x0F00) >> 8;
+
+    u8 x = (opcode & 0x0F00) >> 8;
 
     for (int i = 0; i <= x; i++) {
         cpu->memory[cpu->index + i] = cpu->V[i];
@@ -442,13 +552,16 @@ void ch8_op_store_v0_to_vx(ch8_cpu *cpu, uint16_t opcode)
     //cpu->index += x + 1;
 
     ch8_logDebug("[FX55] - STORE V[0]..V[%d] in memory", x);
+
+    next(cpu);
 }
 
 // 0xFX65
-void ch8_op_fill_v0_to_vx(ch8_cpu *cpu, uint16_t opcode)
+void ch8_op_Load(ch8_cpu *cpu, u16 opcode)
 {
     assert(cpu != NULL);
-    const uint8_t x = (opcode & 0x0F00) >> 8;
+
+    u8 x = (opcode & 0x0F00) >> 8;
 
     for (int i = 0; i <= x; i++) {
         cpu->V[i] = cpu->memory[cpu->index + i];
@@ -457,4 +570,6 @@ void ch8_op_fill_v0_to_vx(ch8_cpu *cpu, uint16_t opcode)
     //cpu->index += x + 1;
 
     ch8_logDebug("[FX55] - FILL memory bytes into V[0]..V[%d]", x);
+
+    next(cpu);
 }
