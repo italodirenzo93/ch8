@@ -1,7 +1,7 @@
 #include "vendor/unity.h"
 
 #include "../src/ch8_opcodes.h"
-#include "../src/ch8_keyboard.h"
+#include "../src/ch8_util.h"
 
 ch8_cpu chip8;
 
