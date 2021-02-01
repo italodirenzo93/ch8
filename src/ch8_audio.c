@@ -12,7 +12,7 @@ static int sampleNr = 0;
 
 #define INIT_CHECK if (audioDeviceId == 0) return
 
-void __audioCallback(void* userdata, Uint8* stream, int len)
+void audioCallback(void* userdata, Uint8* stream, int len)
 {
     Sint16 *buffer = (Sint16*)stream;
     len = len / 2; // 2 bytes per sample for AUDIO_S16SYS
@@ -35,7 +35,7 @@ int ch8_audioInit()
     want.format = AUDIO_S16SYS;
     want.channels = 1;
     want.samples = 2048;
-    want.callback = __audioCallback;
+    want.callback = audioCallback;
 
     audioDeviceId = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
     if (audioDeviceId == 0) {
