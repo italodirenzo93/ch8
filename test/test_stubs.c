@@ -1,6 +1,6 @@
-#include "ch8_cpu.h"
-#include "ch8_log.h"
-#include "ch8_keyboard.h"
+#include "../src/ch8_cpu.h"
+#include "../src/ch8_log.h"
+#include "../src/ch8_keyboard.h"
 
 void ch8_logError(const char* fmt, ...)
 {

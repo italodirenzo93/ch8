@@ -11,10 +11,10 @@ else()
 find_package(SDL2 REQUIRED)
 endif()
 
-include_directories(${SDL2_INCLUDE_DIRS} include)
+include_directories(${SDL2_INCLUDE_DIRS})
 
 # add the executable
-set(HEADERS "include/ch8_cpu.h" "include/ch8_display.h" "include/ch8_opcodes.h" "include/ch8_log.h" "include/ch8_keyboard.h" "include/ch8_audio.h" "include/ch8_util.h" "include/ch8_def.h")
+set(HEADERS "src/ch8_cpu.h" "src/ch8_display.h" "src/ch8_opcodes.h" "src/ch8_log.h" "src/ch8_keyboard.h" "src/ch8_audio.h" "src/ch8_util.h" "src/ch8_def.h")
 add_executable(ch8 ${HEADERS} "src/main.c" "src/ch8_cpu.c" "src/ch8_opcodes.c" "src/ch8_display.c" "src/ch8_log.c" "src/ch8_keyboard.c" "src/ch8_audio.c")
 target_link_libraries(ch8 ${SDL2_LIBRARIES})
 
