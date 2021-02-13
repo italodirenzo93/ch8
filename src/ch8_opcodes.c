@@ -32,11 +32,9 @@ void ch8_op_ReturnFromSub(ch8_cpu* cpu)
     ch8_logDebug("[00EE] - Return from sub-routine");
 
     // Set program counter to address at top of stack
-    cpu->programCounter = cpu->stack[cpu->stackPointer];
+    cpu->programCounter = cpu->stack[--cpu->stackPointer];
 
-    // "Pop" the value from the top of the stack
-    cpu->stack[cpu->stackPointer] = 0;
-    cpu->stackPointer--;
+    next(cpu);
 }
 
 // 0x1NNN
@@ -60,7 +58,7 @@ void ch8_op_CallSub(ch8_cpu *cpu, u16 opcode)
 
     // TODO: check for stack overflow
 
-    cpu->stack[++cpu->stackPointer] = cpu->programCounter;
+    cpu->stack[cpu->stackPointer++] = cpu->programCounter;
     cpu->programCounter = addr;
 }
 
