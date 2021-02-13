@@ -38,14 +38,14 @@ static void test_00EE_ReturnFromSubroutine_SetsProgramCounterToStackTop(void)
     chip8.stack[0] = ch8_randU16();
     chip8.stack[1] = ch8_randU16();
     chip8.stack[2] = addr;
-    chip8.stackPointer = 2;
+    chip8.stackPointer = 3;
 
     // act
     ch8_op_ReturnFromSub(&chip8);
 
     // assert
-    TEST_ASSERT_EQUAL(addr, chip8.programCounter);
-    TEST_ASSERT_EQUAL(1, chip8.stackPointer);
+    TEST_ASSERT_EQUAL(addr + CH8_PC_STEP_SIZE, chip8.programCounter);
+    TEST_ASSERT_EQUAL(2, chip8.stackPointer);
 }
 
 // 1NNN
@@ -85,15 +85,16 @@ static void test_2NNN_CallSub_PushesTheCurrentAddressOntoStack(void)
     chip8.stack[1] = ch8_randU16();
     chip8.stack[2] = ch8_randU16();
 
-    chip8.stackPointer = 2;
+    chip8.stackPointer = 3;
     chip8.programCounter = 0x222;
 
     // act
     ch8_op_CallSub(&chip8, 0x2123);
 
     // assert
-    TEST_ASSERT_EQUAL(3, chip8.stackPointer);
-    TEST_ASSERT_EQUAL(0X222, chip8.stack[chip8.stackPointer]);
+    TEST_ASSERT_EQUAL(4, chip8.stackPointer);
+    TEST_ASSERT_EQUAL(0X222, chip8.stack[chip8.stackPointer - 1]);
+    TEST_ASSERT_EQUAL(0, chip8.stack[chip8.stackPointer]);
 }
 
 // 3XNN
