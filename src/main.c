@@ -26,7 +26,6 @@ static void initialize(int argc, char* argv[])
     }
 
     // Load test ROM
-    //ch8_load_rom(cpu, program, SDL_arraysize(program));
     // TODO: Get ROM filename from argv
     if (!ch8_loadRomFile(&cpu, "assets/test_opcode.ch8")) {
         ch8_logCritical("Could not load ROM");
@@ -108,6 +107,9 @@ int main(int argc, char *argv[])
     initialize(argc, argv);
 
     f32 elapsedMs = 0.0f;
+
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "EndlessLoop"
     while (1) {
         windowMessageLoop();
 
@@ -135,4 +137,5 @@ int main(int argc, char *argv[])
 
         elapsedMs = elapsed;
     }
+#pragma clang diagnostic pop
 }
