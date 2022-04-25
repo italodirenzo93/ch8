@@ -101,6 +101,8 @@ bool ch8_loadRomFile(ch8_cpu *cpu, const char *file)
 
     fclose(f);
 
+    printf("First code: %d\n", cpu->memory[CH8_PROGRAM_START_OFFSET] << 8 | cpu->memory[CH8_PROGRAM_START_OFFSET + 1]);
+
     return true;
 }
 

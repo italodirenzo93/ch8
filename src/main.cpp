@@ -101,16 +101,19 @@ static void windowMessageLoop(void)
     }
 }
 
+#ifdef _WIN32
+int WINAPI wWinMain(_In_ HINSTANCE hInst, _In_out HINSTANCE, _In_ LPWSTR, _In_ int nCmdShow)
+#else
 int main(int argc, char *argv[])
+#endif
 {
     atexit(cleanup);
     initialize(argc, argv);
 
     f32 elapsedMs = 0.0f;
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "EndlessLoop"
-    while (1) {
+
+    while (true) {
         windowMessageLoop();
 
         u64 start, end;
@@ -137,5 +140,4 @@ int main(int argc, char *argv[])
 
         elapsedMs = elapsed;
     }
-#pragma clang diagnostic pop
 }
