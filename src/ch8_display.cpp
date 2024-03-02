@@ -87,7 +87,6 @@ void ch8_displayWriteFb(const ch8_cpu* cpu)
     for (y = 0; y < CH8_DISPLAY_HEIGHT; y++) {
         u32* p = (u32*)(pixels + pitch * y);
         for (x = 0; x < CH8_DISPLAY_WIDTH; x++) {
-            u16 i = y * CH8_DISPLAY_WIDTH + x;
             u8 color = ch8_getPixel(cpu, x, y) > 0 ? 255 : 0;
             *p = SDL_MapRGB(pixelFormat, color, color, color);
             p++;
