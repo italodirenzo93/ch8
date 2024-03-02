@@ -1,7 +1,9 @@
-bin/
-obj/
-out/
-build/
-cmake-build-*/
-.vs/
+# Meson directories
+/builddir
+/subprojects
+!/subprojects/*.wrap
 
+# IDE files
+/.idea
+/.vs
+/.vscode
