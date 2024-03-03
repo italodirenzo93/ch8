@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <SDL.h>
+#include <imgui_impl_sdl2.h>
 
 #include "ch8_cpu.h"
 #include "ch8_display.h"
@@ -44,7 +45,7 @@ static void initialize(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (ch8_displayInit((void*)window) != 0) {
+    if (ch8_displayInit(static_cast<void*>(window)) != 0) {
         ch8_logCritical("Failed to initialize the display\n");
         exit(EXIT_FAILURE);
     }
@@ -75,6 +76,8 @@ static void windowMessageLoop(void)
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
+        ImGui_ImplSDL2_ProcessEvent(&event);
+
         switch (event.type) {
         case SDL_QUIT:
             exit(EXIT_SUCCESS);
@@ -116,10 +119,11 @@ int main(int argc, char *argv[])
         start = SDL_GetPerformanceCounter();
 
         if (!cpu.waitFlag && ch8_clockCycle(&cpu, elapsedMs)) {
+            ch8_displayBeginFrame();
             if (cpu.drawFlag) {
                 ch8_displayWriteFb(&cpu);
             }
-            ch8_displayUpdate();
+            ch8_displayEndFrame();
         }
 
         end = SDL_GetPerformanceCounter();

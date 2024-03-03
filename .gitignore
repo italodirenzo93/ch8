@@ -1,7 +1,5 @@
 # Meson directories
 /builddir
-/subprojects
-!/subprojects/*.wrap
 
 # IDE files
 /.idea

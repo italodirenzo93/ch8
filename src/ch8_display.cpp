@@ -3,12 +3,17 @@
 #include <assert.h>
 #include <SDL.h>
 
+#include <imgui.h>
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdlrenderer2.h>
+
 #include "ch8_cpu.h"
 #include "ch8_log.h"
 
-static SDL_Renderer *renderer = NULL;
-static SDL_Texture *display = NULL;
-static SDL_PixelFormat *pixelFormat = NULL;
+static SDL_Renderer *renderer = nullptr;
+static SDL_Texture *display = nullptr;
+static SDL_PixelFormat *pixelFormat = nullptr;
+static ImGuiContext *imgui = nullptr;
 
 static bool initialized = false;
 
@@ -41,6 +46,22 @@ int ch8_displayInit(void* handle)
         return 1;
     }
 
+    // Initialize ImGui
+    IMGUI_CHECKVERSION();
+    imgui = ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+    if (!ImGui_ImplSDL2_InitForSDLRenderer(static_cast<SDL_Window*>(handle), renderer)) {
+        ch8_logError("Failed to initialize ImGui SDL2 window backend.");
+        return 1;
+    }
+    if (!ImGui_ImplSDLRenderer2_Init(renderer)) {
+        ch8_logError("Failed to initialize ImGui SDL2 renderer backend.");
+        return 1;
+    }
+
     initialized = true;
 
     return 0;
@@ -50,6 +71,14 @@ void ch8_displayQuit()
 {
     INIT_CHECK();
 
+    // ImGui cleanup
+    ImGui_ImplSDLRenderer2_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
+    imgui = nullptr;
+    ch8_logDebug("ImGui resources freed");
+
+    // Cleanup display buffer resources
     SDL_FreeFormat(pixelFormat);
     pixelFormat = NULL;
     ch8_logDebug("Pixel format freed");
@@ -65,12 +94,32 @@ void ch8_displayQuit()
     initialized = false;
 }
 
-void ch8_displayUpdate()
+void ch8_displayBeginFrame()
 {
     INIT_CHECK();
+
+    // Clear display
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
+
+    // Start the Dear ImGui frame
+    ImGui_ImplSDLRenderer2_NewFrame();
+    ImGui_ImplSDL2_NewFrame();
+    ImGui::NewFrame();
+}
+
+void ch8_displayEndFrame()
+{
+    INIT_CHECK();
+
+    // Render display buffer
     SDL_RenderCopy(renderer, display, NULL, NULL);
+
+    // Render UI
+    ImGui::Render();
+    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
+
+    // Boom goes the dynamite
     SDL_RenderPresent(renderer);
 }
 
