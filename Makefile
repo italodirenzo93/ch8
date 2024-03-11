@@ -1,8 +1,16 @@
+BUILD_DIR := builddir
+EXE_NAME := ch8
+
+all: build run
+
+.PHONY: setup
 setup:
-	meson setup builddir
+	meson setup $(BUILD_DIR)
 
+.PHONY: build
 build:
-	meson compile -C builddir
+	meson compile -C $(BUILD_DIR)
 
+.PHONY: run
 run:
-	./builddir/ch8
+	./$(BUILD_DIR)/$(EXE_NAME)

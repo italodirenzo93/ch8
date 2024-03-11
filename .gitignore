@@ -5,3 +5,6 @@
 /.idea
 /.vs
 /.vscode
+
+# DearImGui
+imgui.ini
